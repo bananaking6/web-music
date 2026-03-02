@@ -78,6 +78,7 @@ searchInput.addEventListener("input", (e) => {
 
 async function searchAll(q) {
   searchResults.innerHTML = "";
+  if (PROXY) q = q.replaceAll(" ", "%2B")
   await Promise.all([
     searchSection("Songs", "s", q, renderSongs),
     searchSection("Artists", "a", q, renderArtists),
@@ -348,6 +349,54 @@ function downloadTrack(trackIndex = index) {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+}
+
+async function downloadAlbum(album, tracks) {
+  if (!tracks || tracks.length === 0) {
+    alert("No tracks to download");
+    return;
+  }
+
+  const confirmed = confirm(`Download ${tracks.length} tracks from "${album.title}"?\n\nNote: This will download available audio files.`);
+  if (!confirmed) return;
+
+  showToast(`Preparing to download ${tracks.length} tracks...`);
+  
+  let downloadedCount = 0;
+  for (let i = 0; i < tracks.length; i++) {
+    const track = tracks[i];
+    const filename = `${(i + 1).toString().padStart(2, '0')} - ${track.title.replace(/[<>:"/\\|?*]/g, '_')}.mp3`;
+    
+    try {
+      const trackUrl = await getTrackUrl(track);
+      if (!trackUrl) continue;
+
+      const response = await fetch(trackUrl);
+      if (!response.ok) continue;
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      
+      // Small delay between downloads to avoid overwhelming the browser
+      setTimeout(() => {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, i * 300);
+      
+      downloadedCount++;
+    } catch (e) {
+      console.log(`Could not download: ${track.title}`);
+    }
+  }
+  
+  setTimeout(() => {
+    showToast(`Download started for ${downloadedCount} tracks!`);
+  }, 500);
 }
 
 // Setup player click handlers once
@@ -917,6 +966,7 @@ async function openAlbum(al) {
       <button class="album-action" id="playAll">PLAY</button>
       <button class="album-action secondary" id="shufflePlay">SHUFFLE</button>
       <button class="album-action secondary" id="extraAction" style="display: none;"></button>
+      <button class="album-action secondary" id="downloadAlbum">↓</button>
     </div>
     <div id="albumTracks"></div>
   `;
@@ -1018,6 +1068,7 @@ async function openAlbum(al) {
   // Play buttons
   el.querySelector("#playAll").onclick = () => playTracks(tracks, false);
   el.querySelector("#shufflePlay").onclick = () => playTracks(tracks, true);
+  el.querySelector("#downloadAlbum").onclick = () => downloadAlbum(al, tracks)
 }
 
 /* --- VISUALIZER --- */
