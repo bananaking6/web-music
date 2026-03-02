@@ -2,7 +2,9 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+        <meta name="apple-mobile-web-app-capable" content="true" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <title>𝚺 Music</title>
         <link rel="stylesheet" href="style.css" />
         <link rel="icon" href="icon.svg" />
@@ -11,7 +13,7 @@
         <canvas id="visualizer"></canvas>
         <div id="bg"></div>
         <div id="app">
-            <aside class="sidebar">
+            <aside class="sidebar" id="sidebar">
                 <section id="side-main">
                     <h1>𝚺 Music</h1>
                     <button onclick="showView('home')">Home</button>
@@ -21,7 +23,7 @@
                             openAlbum({
                                 title: 'Queue',
                                 type: 'PLAYLIST',
-                                cover: '5806b59b-2f3d-4d0a-8541-e75de4e58f2c',
+                                cover: '',
                                 releaseDate: `${new Date().getFullYear()}-${new Date().getMonth() + 1}-${new Date().getDate() - 1}`,
                                 artists: [{ name: 'Various Artists' }],
                                 playlistTracks: queue,
@@ -49,6 +51,10 @@
                     <section id="pinned"></section>
                 </section>
             </aside>
+            <nav id="mobileNav" class="mobile-nav hidden">
+                <button id="navHome" onclick="showView('home')" title="Home">Home</button>
+                <button id="navSearch" onclick="showView('search')" title="Search">Search</button>
+            </nav>
             <main>
                 <section id="home" class="view">
                     <div class="home-hero">
@@ -83,7 +89,8 @@
                     <div id="searchResults"></div>
                 </section>
                 <section id="artist" class="view hidden"></section>
-                <section id="album" class="view hidden"></section>
+                <section id="album" class="view hidden">
+                </section>
             </main>
             <footer class="player-footer">
                 <div class="player-seek-container">
@@ -96,7 +103,7 @@
 
                 <div class="player-info">
                     <img id="playerCover" alt=" " />
-                    <div id="playerTitle"></div>
+                    <div id="playerTitle"><span id="playerTitleSpan"></span><img id="playerExplicit" src="e.svg"></div>
                     <div id="playerArtist"></div>
                 </div>
 
@@ -272,7 +279,6 @@
         </div>
         <audio id="audio" crossorigin="anonymous"></audio>
         <script src="script.js"></script>
-        <script src="adddemo.js"></script>
         <script>
             function updatePlayIcon() {
                 const audio = document.getElementById("audio");
