@@ -2,9 +2,15 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"
+        />
         <meta name="apple-mobile-web-app-capable" content="true" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta
+            name="apple-mobile-web-app-status-bar-style"
+            content="black-translucent"
+        />
         <title>𝚺 Music</title>
         <link rel="stylesheet" href="style.css" />
         <link rel="icon" href="icon.svg" />
@@ -51,8 +57,16 @@
                 </section>
             </aside>
             <nav id="mobileNav" class="mobile-nav hidden">
-                <button id="navHome" onclick="showView('home')" title="Home">Home</button>
-                <button id="navSearch" onclick="showView('search')" title="Search">Search</button>
+                <button id="navHome" onclick="showView('home')" title="Home">
+                    Home
+                </button>
+                <button
+                    id="navSearch"
+                    onclick="showView('search')"
+                    title="Search"
+                >
+                    Search
+                </button>
             </nav>
             <main>
                 <section id="home" class="view">
@@ -88,8 +102,7 @@
                     <div id="searchResults"></div>
                 </section>
                 <section id="artist" class="view hidden"></section>
-                <section id="album" class="view hidden">
-                </section>
+                <section id="album" class="view hidden"></section>
             </main>
             <footer class="player-footer">
                 <div class="player-seek-container">
@@ -102,7 +115,10 @@
 
                 <div class="player-info">
                     <img id="playerCover" alt=" " />
-                    <div id="playerTitle"><span id="playerTitleSpan"></span><img id="playerExplicit" src="e.svg"></div>
+                    <div id="playerTitle">
+                        <span id="playerTitleSpan"></span
+                        ><img id="playerExplicit" src="e.svg" />
+                    </div>
                     <div id="playerArtist"></div>
                 </div>
 
@@ -170,7 +186,11 @@
                 </div>
 
                 <div style="display: flex; align-items: center; gap: 15px">
-                    <button onclick="reverseAudio()" title="Reverse" id="reverseBtn">
+                    <button
+                        onclick="reverseAudio()"
+                        title="Reverse"
+                        id="reverseBtn"
+                    >
                         <svg
                             width="20"
                             height="20"
@@ -182,7 +202,9 @@
                             stroke-linejoin="round"
                         >
                             <path d="M21 7v6h-6"></path>
-                            <path d="M3 17a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 7"></path>
+                            <path
+                                d="M3 17a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 7"
+                            ></path>
                         </svg>
                     </button>
                     <button onclick="toggleLyrics()" title="Lyrics">
@@ -283,7 +305,7 @@
                         Done
                     </button>
                     <button
-                        class="modal-btn create"
+                        class="modal-btn create hidden"
                         onclick="createNewPlaylistFromModal()"
                     >
                         + New Playlist

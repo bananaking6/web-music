@@ -1,4 +1,15 @@
+@font-face {
+    font-family: "SigmaFont";
+    src: url("font.ttf");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 :root {
+    /* --- Font --- */
+    font-family: "SigmaFont", "Comic Sans MS", "Comic Sans";
+
     /* --- Colors --- */
     --main-color: #1db954;
     --secondary-color: #169c46;
@@ -48,7 +59,6 @@
 }
 
 body {
-    font-family: "Comic Sans MS", "Comic Sans", cursive;
     background-color: var(--color-bg-base);
     color: var(--color-text-base);
     overflow: hidden;
@@ -58,7 +68,8 @@ body {
     user-select: none;
 }
 
-input, textarea {
+input,
+textarea {
     -webkit-user-select: text;
     user-select: text;
 }
@@ -144,7 +155,7 @@ a {
 }
 
 .sidebar h1::after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: 0;
     left: 0;
@@ -342,7 +353,7 @@ main {
     padding: 0;
     width: 80px;
     height: 80px;
-    background: transparent;
+    background: var(--main-color);
     max-height: 80px;
 }
 
@@ -556,6 +567,11 @@ main {
 #albumTracks {
     clear: both;
     padding-top: var(--space-lg);
+}
+
+#albumTitle:hover {
+    color: var(--main-color);
+    outline: none;
 }
 
 /* --- Player Footer --- */
@@ -1157,11 +1173,11 @@ input[type="range"]::-webkit-slider-runnable-track {
         grid-template-rows: 1fr 48px var(--player-height);
         height: 100vh;
     }
-    
+
     .mobile-nav:not(.hidden) {
         display: flex !important;
     }
-    
+
     .mobile-nav.hidden {
         display: none !important;
     }
@@ -1503,7 +1519,7 @@ input[type="range"]::-webkit-slider-runnable-track {
         z-index: 999;
         width: 44px;
         height: 44px;
-        background: rgba(0,0,0,0.6);
+        background: rgba(0, 0, 0, 0.6);
         border: none;
         border-radius: 50%;
         color: #fff;

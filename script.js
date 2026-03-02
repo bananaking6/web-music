@@ -1,5 +1,5 @@
 let PROXY = "https://api.codetabs.com/v1/proxy/?quest=";
-//PROXY = "";
+PROXY = "";
 const API = PROXY + "https://api.monochrome.tf";
 const IMG = PROXY + "https://resources.tidal.com/images/";
 const audio = document.getElementById("audio");
@@ -23,7 +23,7 @@ function togglePlaylists() {
 
 document.addEventListener("DOMContentLoaded", () => {
   const mobileNav = document.getElementById("mobileNav");
-  
+
   // Show mobile nav on mobile, hide on desktop
   function updateNavVisibility() {
     if (window.innerWidth <= 768) {
@@ -32,25 +32,27 @@ document.addEventListener("DOMContentLoaded", () => {
       mobileNav?.classList.add("hidden");
     }
   }
-  
+
   const navButtons = mobileNav?.querySelectorAll("button");
-  
+
   function updateNavHighlight() {
     const activeView = document.querySelector(".view:not(.hidden)");
     if (!activeView) return;
-    
-    navButtons?.forEach(btn => btn.classList.remove("active"));
-    if (activeView.id === "home") document.getElementById("navHome")?.classList.add("active");
-    if (activeView.id === "search") document.getElementById("navSearch")?.classList.add("active");
+
+    navButtons?.forEach((btn) => btn.classList.remove("active"));
+    if (activeView.id === "home")
+      document.getElementById("navHome")?.classList.add("active");
+    if (activeView.id === "search")
+      document.getElementById("navSearch")?.classList.add("active");
   }
-  
-  navButtons?.forEach(btn => {
+
+  navButtons?.forEach((btn) => {
     btn.addEventListener("click", () => setTimeout(updateNavHighlight, 50));
   });
-  
+
   window.addEventListener("showViewEvent", updateNavHighlight);
   window.addEventListener("resize", updateNavVisibility);
-  
+
   updateNavVisibility();
   updateNavHighlight();
 });
@@ -73,12 +75,15 @@ searchInput.addEventListener("keydown", (e) => {
 searchInput.addEventListener("input", (e) => {
   if (searchInput.value.trim() === "") return;
   clearTimeout(searchInput._searchTimeout);
-  searchInput._searchTimeout = setTimeout(() => searchAll(searchInput.value), 250);
+  searchInput._searchTimeout = setTimeout(
+    () => searchAll(searchInput.value),
+    250,
+  );
 });
 
 async function searchAll(q) {
   searchResults.innerHTML = "";
-  if (PROXY) q = q.replaceAll(" ", "%2B")
+  if (PROXY) q = q.replaceAll(" ", "%2B");
   await Promise.all([
     searchSection("Songs", "s", q, renderSongs),
     searchSection("Artists", "a", q, renderArtists),
@@ -90,7 +95,7 @@ async function searchSection(title, param, q, render) {
   const res = await fetch(`${API}/search/?${param}=${encodeURIComponent(q)}`);
   const data = await res.json();
   if (!data?.data) return;
-  
+
   const row = document.createElement("div");
   row.className = "row";
   row.innerHTML = `<h3>${title}</h3><div class="cards"></div>`;
@@ -121,30 +126,54 @@ function dedupItems(items, keyFn) {
 
 function renderSongs(data, container) {
   const tracks = data?.tracks?.items || data?.items || [];
-  const deduped = dedupItems(tracks, (t) => `${t.title.toLowerCase()}|${(t.artists || []).map(a => a.name.toLowerCase()).sort().join(",")}`);
-  
+  const deduped = dedupItems(
+    tracks,
+    (t) =>
+      `${t.title.toLowerCase()}|${(t.artists || [])
+        .map((a) => a.name.toLowerCase())
+        .sort()
+        .join(",")}`,
+  );
+
   deduped.forEach((t) => {
-    const img = t?.album?.cover ? `${IMG}${t.album.cover.replaceAll("-", "/")}/320x320.jpg` : "";
+    const img = t?.album?.cover
+      ? `${IMG}${t.album.cover.replaceAll("-", "/")}/320x320.jpg`
+      : "";
     container.appendChild(createCard(img, t.title, () => addToQueue(t)));
   });
 }
 
 function renderArtists(data, container) {
   const artists = data?.artists?.items || data?.items || [];
-  const deduped = dedupItems(artists, (a) => a.name.toLowerCase().replace(/[\s-]/g, ""));
-  
-  deduped.filter(a => a.id && a.picture).forEach((a) => {
-    const img = `${IMG}${a.picture.replaceAll("-", "/")}/320x320.jpg`;
-    container.appendChild(createCard(img, a.name, () => openArtist(a.id, a.name, a.picture)));
-  });
+  const deduped = dedupItems(artists, (a) =>
+    a.name.toLowerCase().replace(/[\s-]/g, ""),
+  );
+
+  deduped
+    .filter((a) => a.id && a.picture)
+    .forEach((a) => {
+      const img = `${IMG}${a.picture.replaceAll("-", "/")}/320x320.jpg`;
+      container.appendChild(
+        createCard(img, a.name, () => openArtist(a.id, a.name, a.picture)),
+      );
+    });
 }
 
 function renderAlbums(data, container) {
   const albums = data?.albums?.items || data?.items || [];
-  const deduped = dedupItems(albums, (al) => `${al.title.toLowerCase()}|${(al.artists || []).map(a => a.name.toLowerCase()).sort().join(",")}`);
-  
+  const deduped = dedupItems(
+    albums,
+    (al) =>
+      `${al.title.toLowerCase()}|${(al.artists || [])
+        .map((a) => a.name.toLowerCase())
+        .sort()
+        .join(",")}`,
+  );
+
   deduped.forEach((al) => {
-    const img = al.cover ? `${IMG}${al.cover.replaceAll("-", "/")}/320x320.jpg` : "";
+    const img = al.cover
+      ? `${IMG}${al.cover.replaceAll("-", "/")}/320x320.jpg`
+      : "";
     container.appendChild(createCard(img, al.title, () => openAlbum(al)));
   });
 }
@@ -182,7 +211,7 @@ function addToQueue(track) {
   // Check if same as last song in queue
   const lastTrack = queue[queue.length - 1];
   if (lastTrack && lastTrack.id === track.id) {
-    clearQueue()
+    clearQueue();
     queue = [track]; // reset queue
     index = 0;
     loadTrack(track); // play immediately
@@ -235,7 +264,9 @@ function adjustColor(hex, percent) {
 }
 
 async function getTrackUrl(track) {
-  const res = await fetch(`${API}/track/?id=${track.id}${PROXY ? "%26" : "&"}quality=LOW`);
+  const res = await fetch(
+    `${API}/track/?id=${track.id}${PROXY ? "%26" : "&"}quality=LOW`,
+  );
   const data = await res.json();
   return PROXY + JSON.parse(atob(data.data.manifest)).urls[0];
 }
@@ -243,31 +274,49 @@ async function getTrackUrl(track) {
 async function loadAudioBlob(track, trackIndex) {
   if (preloadedAudio[trackIndex]) return preloadedAudio[trackIndex];
   const url = await getTrackUrl(track);
-  const blob = await fetch(url).then(r => r.blob());
+  const blob = await fetch(url).then((r) => r.blob());
   const objectUrl = URL.createObjectURL(blob);
-  return preloadedAudio[trackIndex] = { blob, objectUrl, filename: `${track.title || "track"}.mp3` };
+  return (preloadedAudio[trackIndex] = {
+    blob,
+    objectUrl,
+    filename: `${track.title || "track"}.mp3`,
+  });
 }
 
 function updatePlayerUI(track, trackIndex) {
-  const img = track?.album?.cover ? `${IMG}${track.album.cover.replaceAll("-", "/")}/320x320.jpg` : "=";
+  const img = track?.album?.cover
+    ? `${IMG}${track.album.cover.replaceAll("-", "/")}/320x320.jpg`
+    : "=";
   link.href = img;
   document.getElementById("playerCover").src = img;
   document.getElementById("bg").style.backgroundImage = `url(${img})`;
-  document.getElementById("playerTitleSpan").textContent = track.title || "Unknown Title";
-  document.getElementById("playerArtist").textContent = `${track.artists?.[0]?.name || "Unknown Artist"} - ${track.album.title || ""}`;
+  document.getElementById("playerTitleSpan").textContent =
+    track.title || "Unknown Title";
+  document.getElementById("playerArtist").textContent =
+    `${track.artists?.[0]?.name || "Unknown Artist"} - ${track.album.title || ""}`;
   document.title = `${track.title || "Unknown Title"} - ${track.artists?.[0]?.name || "Unknown Artist"}`;
-  document.getElementById("playerExplicit").style.display = track.explicit ? "inline" : "none";
-  
-  document.documentElement.style.setProperty("--main-color", track.album.vibrantColor);
-  document.documentElement.style.setProperty("--secondary-color", adjustColor(track.album.vibrantColor, -50));
-  
+  document.getElementById("playerExplicit").style.display = track.explicit
+    ? "inline"
+    : "none";
+
+  document.documentElement.style.setProperty(
+    "--main-color",
+    track.album.vibrantColor,
+  );
+  document.documentElement.style.setProperty(
+    "--secondary-color",
+    adjustColor(track.album.vibrantColor, -50),
+  );
+
   const queueItems = queueView.querySelectorAll("div");
-  queueItems.forEach((item, i) => item.classList.toggle("current", i === trackIndex));
+  queueItems.forEach((item, i) =>
+    item.classList.toggle("current", i === trackIndex),
+  );
 }
 
 async function loadTrack(trackOrIndex) {
   let trackIndex, track;
-  
+
   if (typeof trackOrIndex === "number") {
     trackIndex = trackOrIndex;
     track = queue[trackIndex];
@@ -286,11 +335,12 @@ async function loadTrack(trackOrIndex) {
 
   // Reset reverse button state when loading new track
   const reverseBtn = document.getElementById("reverseBtn");
+  const progressBar = document.getElementById("progressBar");
   reverseBtn?.classList.remove("active");
   progressBar?.classList.remove("reversed");
-  
+
   updatePlayerUI(track, trackIndex);
-  
+
   const trackData = await loadAudioBlob(track, trackIndex);
   audio.src = trackData.objectUrl;
   initAudioContext();
@@ -362,16 +412,18 @@ async function downloadAlbum(album, tracks) {
     return;
   }
 
-  const confirmed = confirm(`Download ${tracks.length} tracks from "${album.title}"?\n\nNote: This will download available audio files.`);
+  const confirmed = confirm(
+    `Download ${tracks.length} tracks from "${album.title}"?\n\nNote: This will download available audio files.`,
+  );
   if (!confirmed) return;
 
   showToast(`Preparing to download ${tracks.length} tracks...`);
-  
+
   let downloadedCount = 0;
   for (let i = 0; i < tracks.length; i++) {
     const track = tracks[i];
-    const filename = `${(i + 1).toString().padStart(2, '0')} - ${track.title.replace(/[<>:"/\\|?*]/g, '_')}.mp3`;
-    
+    const filename = `${(i + 1).toString().padStart(2, "0")} - ${track.title.replace(/[<>:"/\\|?*]/g, "_")}.mp3`;
+
     try {
       const trackUrl = await getTrackUrl(track);
       if (!trackUrl) continue;
@@ -381,7 +433,7 @@ async function downloadAlbum(album, tracks) {
 
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
-      
+
       // Small delay between downloads to avoid overwhelming the browser
       setTimeout(() => {
         const a = document.createElement("a");
@@ -392,13 +444,13 @@ async function downloadAlbum(album, tracks) {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }, i * 300);
-      
+
       downloadedCount++;
     } catch (e) {
       console.log(`Could not download: ${track.title}`);
     }
   }
-  
+
   setTimeout(() => {
     showToast(`Download started for ${downloadedCount} tracks!`);
   }, 500);
@@ -408,7 +460,11 @@ async function downloadAlbum(album, tracks) {
 document.getElementById("playerArtist").addEventListener("click", () => {
   const track = queue[index];
   if (track?.artists?.[0]?.id) {
-    openArtist(track.artists[0].id, track.artists[0].name, track.artists[0].picture || "");
+    openArtist(
+      track.artists[0].id,
+      track.artists[0].name,
+      track.artists[0].picture || "",
+    );
   }
 });
 
@@ -479,18 +535,27 @@ async function reverseAudio(trackIndex = index) {
     };
 
     writeString("RIFF");
-    view.setUint32(offset, 36 + length, true); offset += 4;
+    view.setUint32(offset, 36 + length, true);
+    offset += 4;
     writeString("WAVE");
     writeString("fmt ");
-    view.setUint32(offset, 16, true); offset += 4;
-    view.setUint16(offset, 1, true); offset += 2;
-    view.setUint16(offset, numChannels, true); offset += 2;
-    view.setUint32(offset, sampleRate, true); offset += 4;
-    view.setUint32(offset, sampleRate * numChannels * 2, true); offset += 4;
-    view.setUint16(offset, numChannels * 2, true); offset += 2;
-    view.setUint16(offset, 16, true); offset += 2;
+    view.setUint32(offset, 16, true);
+    offset += 4;
+    view.setUint16(offset, 1, true);
+    offset += 2;
+    view.setUint16(offset, numChannels, true);
+    offset += 2;
+    view.setUint32(offset, sampleRate, true);
+    offset += 4;
+    view.setUint32(offset, sampleRate * numChannels * 2, true);
+    offset += 4;
+    view.setUint16(offset, numChannels * 2, true);
+    offset += 2;
+    view.setUint16(offset, 16, true);
+    offset += 2;
     writeString("data");
-    view.setUint32(offset, length, true); offset += 4;
+    view.setUint32(offset, length, true);
+    offset += 4;
 
     for (let i = 0; i < buffer.length; i++) {
       for (let c = 0; c < numChannels; c++) {
@@ -537,16 +602,17 @@ async function loadLyrics(track) {
 
   // Create line elements with proper durations
   parsedLines.forEach((lineData, index) => {
-    const durationMs = (index + 1 < parsedLines.length) 
-      ? parsedLines[index + 1].time - lineData.time
-      : audio.duration * 1000 - lineData.time;
+    const durationMs =
+      index + 1 < parsedLines.length
+        ? parsedLines[index + 1].time - lineData.time
+        : audio.duration * 1000 - lineData.time;
 
     const lineDiv = document.createElement("div");
     lineDiv.className = "lyric-line";
     lineDiv.innerText = lineData.text;
     lineDiv.dataset.time = lineData.time;
     lineDiv.dataset.duration = durationMs;
-    
+
     lines.push({ time: lineData.time, duration: durationMs, el: lineDiv });
 
     lineDiv.onclick = () => {
@@ -580,6 +646,12 @@ audio.ontimeupdate = () => {
       line.el.style.setProperty("--p", 0);
     }
   }
+
+  // Scroll currently active word or line into view
+  currentLine?.el.scrollIntoView({
+    block: "center",
+    behavior: "smooth",
+  });
 };
 
 /* --- PLAYLISTS --- */
@@ -655,7 +727,7 @@ function loadPlaylists() {
       const plDiv = document.createElement("div");
       plDiv.className = "card";
       plDiv.title = pl.title;
-      
+
       const covers = [];
       const seenCovers = new Set();
       for (const t of pl.tracks) {
@@ -665,10 +737,11 @@ function loadPlaylists() {
           if (covers.length === 4) break;
         }
       }
-      
+
       if (covers.length > 0) {
         const grid = document.createElement("div");
-        grid.style.cssText = "display: grid; grid-template-columns: repeat(2, 1fr); width: 100%; height: 100%;";
+        grid.style.cssText =
+          "display: grid; grid-template-columns: repeat(2, 1fr); width: 100%; height: 100%; background-color:pink;";
         covers.forEach((cover) => {
           const img = document.createElement("img");
           img.src = `${IMG}${cover.replaceAll("-", "/")}/320x320.jpg`;
@@ -677,7 +750,7 @@ function loadPlaylists() {
         });
         plDiv.appendChild(grid);
       }
-      
+
       plDiv.onclick = () => openPlaylist(plId);
       playlistsBar.appendChild(plDiv);
     }
@@ -712,6 +785,127 @@ function loadPlaylists() {
 
 document.addEventListener("DOMContentLoaded", loadPlaylists);
 
+/* Improved playlist modal + context menu helpers */
+
+/* Helper: toggle a track in a playlist by id (adds or removes, updates localStorage) */
+function toggleTrackInPlaylist(plId, track, add) {
+  try {
+    const key = `playlist_${plId}`;
+    const plRaw = localStorage.getItem(key);
+    if (!plRaw) return;
+    let pl = JSON.parse(plRaw);
+    if (!pl.tracks) pl.tracks = [];
+
+    if (add) {
+      if (!pl.tracks.some((t) => t.id === track.id)) {
+        pl.tracks.push(track);
+        showToast(`Added to "${pl.title}"`);
+      }
+    } else {
+      const before = pl.tracks.length;
+      pl.tracks = pl.tracks.filter((t) => t.id !== track.id);
+      if (pl.tracks.length !== before) showToast(`Removed from "${pl.title}"`);
+    }
+
+    localStorage.setItem(key, JSON.stringify(pl));
+  } catch (e) {
+    console.error("toggleTrackInPlaylist error", e);
+  }
+}
+
+/* Build playlist checkbox list for the modal.
+   options: { tracks: [track,...], headerText: string } */
+function buildPlaylistListForModal(options) {
+  const tracks = options.tracks || [];
+  const modal = document.getElementById("playlistModal");
+  const list = document.getElementById("playlistList");
+  if (!modal || !list) return;
+
+  const header = modal.querySelector("h3");
+  if (header && typeof options.headerText !== "undefined")
+    header.textContent = options.headerText;
+
+  list.innerHTML = "";
+
+  for (let key in localStorage) {
+    if (!Object.prototype.hasOwnProperty.call(localStorage, key)) continue;
+    if (!key.startsWith("playlist_")) continue;
+
+    try {
+      let pl = JSON.parse(localStorage.getItem(key));
+      const plId = key.replace("playlist_", "");
+      const div = document.createElement("div");
+      div.className = "playlist-option";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.id = `chk-${plId}`;
+
+      // Decide checked/indeterminate state based on number of tracks that exist in pl
+      const tracksInPlaylist = tracks.filter((t) =>
+        pl.tracks.some((p) => p.id === t.id),
+      ).length;
+      if (tracks.length === 1) {
+        checkbox.checked = tracksInPlaylist === 1;
+        checkbox.indeterminate = false;
+      } else {
+        checkbox.checked =
+          tracksInPlaylist === tracks.length && tracks.length > 0;
+        checkbox.indeterminate =
+          tracksInPlaylist > 0 && tracksInPlaylist < tracks.length;
+      }
+
+      checkbox.onchange = (e) => {
+        // For single track: add/remove that track.
+        // For multiple tracks: add/remove all tracks.
+        if (tracks.length === 1) {
+          const t = tracks[0];
+          if (e.target.checked) {
+            toggleTrackInPlaylist(plId, t, true);
+          } else {
+            toggleTrackInPlaylist(plId, t, false);
+          }
+        } else {
+          if (e.target.checked) {
+            tracks.forEach((t) => toggleTrackInPlaylist(plId, t, true));
+          } else {
+            tracks.forEach((t) => toggleTrackInPlaylist(plId, t, false));
+          }
+        }
+        // Refresh pl state for correct indeterminate/checked UI if needed
+        pl = JSON.parse(localStorage.getItem(key));
+        // Update checkbox state after mutation
+        const updatedCount = tracks.filter((t) =>
+          pl.tracks.some((p) => p.id === t.id),
+        ).length;
+        checkbox.checked = updatedCount === tracks.length && tracks.length > 0;
+        checkbox.indeterminate =
+          updatedCount > 0 && updatedCount < tracks.length;
+      };
+
+      const label = document.createElement("label");
+      label.htmlFor = `chk-${plId}`;
+      label.textContent = pl.title;
+
+      div.appendChild(checkbox);
+      div.appendChild(label);
+
+      div.onclick = (e) => {
+        if (e.target !== checkbox && e.target !== label) {
+          checkbox.checked = !checkbox.checked;
+          checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      };
+
+      list.appendChild(div);
+    } catch (e) {
+      console.error("Error parsing playlist", key, e);
+    }
+  }
+}
+
+/* Open modal for a single track (no longer overwrites the passed track).
+   Pass a track object (with id and title) or nothing to use current queue[index]. */
 function openAddToPlaylistModal(track) {
   if (!track) {
     if (
@@ -726,60 +920,21 @@ function openAddToPlaylistModal(track) {
     }
   }
 
-  track = queue[index];
   const modal = document.getElementById("playlistModal");
   const list = document.getElementById("playlistList");
-  list.innerHTML = "";
+  if (!modal || !list) return;
 
+  const headerText = `Add "${track.title || track.name || "Track"}" to Playlist`;
   modal.classList.remove("hidden");
+  // Use the builder helper:
+  buildPlaylistListForModal({ tracks: [track], headerText });
 
-  for (let key in localStorage) {
-    if (key.startsWith("playlist_")) {
-      try {
-        let pl = JSON.parse(localStorage.getItem(key));
-        const plId = key.replace("playlist_", "");
-
-        const div = document.createElement("div");
-        div.className = "playlist-option";
-
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.id = `chk-${plId}`;
-
-        // Check if track is already in playlist
-        const isInPlaylist = pl.tracks.some((t) => t.id === track.id);
-        checkbox.checked = isInPlaylist;
-
-        checkbox.onchange = (e) => {
-          addToPlaylist(plId, track);
-        };
-
-        const label = document.createElement("label");
-        label.htmlFor = `chk-${plId}`;
-        label.textContent = pl.title;
-
-        div.appendChild(checkbox);
-        div.appendChild(label);
-
-        div.onclick = (e) => {
-          if (e.target !== checkbox && e.target !== label) {
-            checkbox.checked = !checkbox.checked;
-            checkbox.dispatchEvent(new Event("change"));
-          }
-        };
-
-        list.appendChild(div);
-      } catch (e) {
-        console.error("Error parsing playlist", key, e);
-      }
-    }
-  }
+  // store current context for modal if needed:
+  modal.dataset.modalType = "single";
+  modal.dataset.trackId = track.id;
 }
 
-function closePlaylistModal() {
-  document.getElementById("playlistModal").classList.add("hidden");
-}
-
+/* Open modal for multiple tracks (album). */
 function openAddAlbumToPlaylistModal(tracks, albumTitle) {
   if (!tracks || tracks.length === 0) {
     showToast("No tracks to add");
@@ -787,81 +942,163 @@ function openAddAlbumToPlaylistModal(tracks, albumTitle) {
   }
 
   const modal = document.getElementById("playlistModal");
-  const list = document.getElementById("playlistList");
-  const header = modal.querySelector("h3");
-  header.textContent = `Add "${albumTitle}" to Playlist`;
-  list.innerHTML = "";
+  if (!modal) return;
 
+  const headerText = `Add "${albumTitle}" to Playlist`;
   modal.classList.remove("hidden");
 
-  for (let key in localStorage) {
-    if (key.startsWith("playlist_")) {
-      try {
-        let pl = JSON.parse(localStorage.getItem(key));
-        const plId = key.replace("playlist_", "");
+  buildPlaylistListForModal({ tracks, headerText });
 
-        const div = document.createElement("div");
-        div.className = "playlist-option";
+  modal.dataset.modalType = "multi";
+  delete modal.dataset.trackId;
+}
 
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.id = `chk-${plId}`;
+/* Open modal for artist. */
+async function openAddArtistToPlaylistModal(albums, artist) {
+  console.log(albums, artist);
 
-        // Check if all tracks are already in playlist
-        const tracksInPlaylist = tracks.filter((track) =>
-          pl.tracks.some((t) => t.id === track.id)
-        ).length;
-        checkbox.checked = tracksInPlaylist > 0;
-        checkbox.indeterminate = tracksInPlaylist > 0 && tracksInPlaylist < tracks.length;
+  const modal = document.getElementById("playlistModal");
+  if (!modal) return;
 
-        checkbox.onchange = (e) => {
-          if (e.target.checked) {
-            // Add all tracks
-            tracks.forEach((track) => {
-              if (!pl.tracks.some((t) => t.id === track.id)) {
-                addToPlaylist(plId, track);
-              }
-            });
-          } else {
-            // Remove all tracks
-            tracks.forEach((track) => {
-              if (pl.tracks.some((t) => t.id === track.id)) {
-                addToPlaylist(plId, track);
-              }
-            });
-          }
-          // Refresh the playlist object
-          pl = JSON.parse(localStorage.getItem(key));
-        };
+  try {
+    // 1. Create an array of promises and await them all
+    const trackArrays = await Promise.all(
+      albums.map(async (al) => {
+        const response = await fetch(`${API}/album/?id=${al.id}`);
+        const data = await response.json();
+        return data?.data?.items || [];
+      }),
+    );
 
-        const label = document.createElement("label");
-        label.htmlFor = `chk-${plId}`;
-        label.textContent = pl.title;
+    // 2. Flatten the results into a single array
+    const tracks = trackArrays.flat();
 
-        div.appendChild(checkbox);
-        div.appendChild(label);
+    const headerText = `Add "${artist.name}" to Playlist`;
+    modal.classList.remove("hidden");
 
-        div.onclick = (e) => {
-          if (e.target !== checkbox && e.target !== label) {
-            checkbox.checked = !checkbox.checked;
-            checkbox.dispatchEvent(new Event("change"));
-          }
-        };
+    // 3. This now runs only after the tracks are ready
+    buildPlaylistListForModal({ tracks, headerText });
 
-        list.appendChild(div);
-      } catch (e) {
-        console.error("Error parsing playlist", key, e);
-      }
-    }
+    modal.dataset.modalType = "multi";
+    delete modal.dataset.trackId;
+  } catch (error) {
+    console.error("Failed to fetch album tracks:", error);
   }
 }
 
-function createNewPlaylistFromModal() {
-  const name = prompt("Playlist Name:");
-  if (name) {
-    createPlaylist(crypto.randomUUID(), name);
-    openAddToPlaylistModal();
+/* Close */
+function closePlaylistModal() {
+  document.getElementById("playlistModal").classList.add("hidden");
+  loadPlaylists();
+}
+
+/* Context menu: create a right-click menu for a track element
+   Usage: call setupTrackContextMenu(el, track) after rendering track DOM nodes. */
+function setupTrackContextMenu(el, track) {
+  if (!el || !track) return;
+  el.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    showTrackContextMenu(e.pageX, e.pageY, track);
+  });
+}
+
+/* Show a small context menu at x,y with actions:
+   - "Add to playlist..." -> opens modal for that track
+   - quick-add items for each playlist to add immediately */
+function showTrackContextMenu(x, y, track) {
+  let menu = document.getElementById("trackContextMenu");
+  if (!menu) {
+    menu = document.createElement("div");
+    menu.id = "trackContextMenu";
+    menu.className = "context-menu";
+    // minimal styles - you should move these to your CSS file
+    menu.style.position = "absolute";
+    menu.style.zIndex = 9999;
+    menu.style.background = "#fff";
+    menu.style.border = "1px solid rgba(0,0,0,0.12)";
+    menu.style.boxShadow = "0 2px 8px rgba(0,0,0,0.12)";
+    menu.style.padding = "4px 0";
+    menu.style.display = "none";
+    document.body.appendChild(menu);
+
+    // hide on any click elsewhere
+    document.addEventListener("click", () => {
+      menu.style.display = "none";
+    });
+    // hide on escape
+    document.addEventListener("keydown", (ev) => {
+      if (ev.key === "Escape") menu.style.display = "none";
+    });
   }
+
+  menu.innerHTML = "";
+
+  const makeItem = (text, onClick) => {
+    const it = document.createElement("div");
+    it.className = "context-menu-item";
+    it.style.padding = "8px 16px";
+    it.style.cursor = "pointer";
+    it.textContent = text;
+    it.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      onClick(ev);
+      menu.style.display = "none";
+    });
+    it.addEventListener(
+      "mouseover",
+      () => (it.style.background = "rgba(0,0,0,0.04)"),
+    );
+    it.addEventListener(
+      "mouseout",
+      () => (it.style.background = "transparent"),
+    );
+    return it;
+  };
+
+  // Primary action: open modal
+  menu.appendChild(
+    makeItem("Add to playlist...", () => openAddToPlaylistModal(track)),
+  );
+
+  // Divider
+  menu.appendChild(() => {});
+  const divider = document.createElement("div");
+  divider.style.height = "1px";
+  divider.style.margin = "6px 0";
+  divider.style.background = "rgba(0,0,0,0.06)";
+  menu.appendChild(divider);
+
+  // Quick-add per playlist
+  let foundAny = false;
+  for (let key in localStorage) {
+    if (!Object.prototype.hasOwnProperty.call(localStorage, key)) continue;
+    if (!key.startsWith("playlist_")) continue;
+    try {
+      const pl = JSON.parse(localStorage.getItem(key));
+      const plId = key.replace("playlist_", "");
+      menu.appendChild(
+        makeItem("Quick add to " + pl.title, () => {
+          toggleTrackInPlaylist(plId, track, true);
+        }),
+      );
+      foundAny = true;
+    } catch (e) {
+      // skip broken playlist entries
+    }
+  }
+
+  if (!foundAny) {
+    menu.appendChild(
+      makeItem("No playlists yet — create one", () =>
+        createNewPlaylistFromModal(x, y, track),
+      ),
+    );
+  }
+
+  // position & show
+  menu.style.left = x + "px";
+  menu.style.top = y + "px";
+  menu.style.display = "block";
 }
 
 /* --- ARTIST PAGE --- */
@@ -966,6 +1203,8 @@ async function openArtist(id, name, pic) {
 
   const allAlbums = deduplicateAlbums(Array.from(albumMap.values()));
 
+  //openAddArtistToPlaylistModal(allAlbums, rawArtist);
+
   // Separate full albums and singles/EPs
   const albums = allAlbums.filter((a) => !["EP", "SINGLE"].includes(a.type));
   const epsAndSingles = allAlbums.filter((a) =>
@@ -997,7 +1236,7 @@ async function openArtist(id, name, pic) {
               (item) => item.item.id === t.id,
             )?.item;
             if (fullTrack) {
-              favoriteTrack(fullTrack);
+              openAddToPlaylistModal(fullTrack);
             } else {
               showToast("Failed to favorite track");
             }
@@ -1017,7 +1256,9 @@ async function openArtist(id, name, pic) {
     const container = document.createElement("div");
     container.className = "cards";
     items.forEach((al) => {
-      const img = al.cover ? `${IMG}${al.cover.replaceAll("-", "/")}/320x320.jpg` : "";
+      const img = al.cover
+        ? `${IMG}${al.cover.replaceAll("-", "/")}/320x320.jpg`
+        : "";
       container.appendChild(createCard(img, al.title, () => openAlbum(al)));
     });
     row.appendChild(container);
@@ -1053,7 +1294,10 @@ function renderTrackRow(track) {
     <span class="right">${track.key ? `${track.key} ` : ""}${track.bpm ? `${track.bpm} BPM ` : ""}${formatTime(track.duration)}</span>
   `;
   d.onclick = () => addToQueue(track);
-  d.oncontextmenu = (e) => { e.preventDefault(); favoriteTrack(track); };
+  d.oncontextmenu = (e) => {
+    e.preventDefault();
+    openAddToPlaylistModal(track);
+  };
   return d;
 }
 
@@ -1115,7 +1359,9 @@ async function openAlbum(al) {
         titleEl.contentEditable = false;
         const newTitle = titleEl.textContent.trim();
         if (newTitle) {
-          let pl = JSON.parse(localStorage.getItem(`playlist_${al.id}`) || "null");
+          let pl = JSON.parse(
+            localStorage.getItem(`playlist_${al.id}`) || "null",
+          );
           if (pl) {
             pl.title = newTitle;
             localStorage.setItem(`playlist_${al.id}`, JSON.stringify(pl));
@@ -1125,9 +1371,16 @@ async function openAlbum(al) {
         }
       };
       titleEl.addEventListener("blur", save, { once: true });
-      titleEl.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") { e.preventDefault(); save(); }
-      }, { once: true });
+      titleEl.addEventListener(
+        "keydown",
+        (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            save();
+          }
+        },
+        { once: true },
+      );
     });
 
     // Delete button
@@ -1165,14 +1418,16 @@ async function openAlbum(al) {
     // Regular album: fetch from API
     const data = await fetch(`${API}/album/?id=${al.id}`).then((r) => r.json());
     tracks = (data?.data?.items || []).map((t) => t.item);
-    
+
     const extraBtn = el.querySelector("#extraAction");
     extraBtn.textContent = "Pin Album";
     extraBtn.style.display = "inline-block";
     extraBtn.onclick = () => {
       const pinned = JSON.parse(localStorage.getItem("pinned")) || [];
       const item = ["album", al];
-      const idx = pinned.findIndex(([type, data]) => type === "album" && data.id === al.id);
+      const idx = pinned.findIndex(
+        ([type, data]) => type === "album" && data.id === al.id,
+      );
       if (idx !== -1) pinned.splice(idx, 1);
       else pinned.push(item);
       localStorage.setItem("pinned", JSON.stringify(pinned));
@@ -1187,8 +1442,9 @@ async function openAlbum(al) {
   // Play buttons
   el.querySelector("#playAll").onclick = () => playTracks(tracks, false);
   el.querySelector("#shufflePlay").onclick = () => playTracks(tracks, true);
-  el.querySelector("#addAllPlaylist").onclick = () => openAddAlbumToPlaylistModal(tracks, al.title);
-  el.querySelector("#downloadAlbum").onclick = () => downloadAlbum(al, tracks)
+  el.querySelector("#addAllPlaylist").onclick = () =>
+    openAddAlbumToPlaylistModal(tracks, al.title);
+  el.querySelector("#downloadAlbum").onclick = () => downloadAlbum(al, tracks);
 }
 
 /* --- VISUALIZER --- */
@@ -1273,16 +1529,16 @@ function updateProgress() {
 
   const isReversed = preloadedAudio[index]?.reversed || false;
   const pct = (audio.currentTime / audio.duration) * 100;
-  
+
   // In reverse mode, progress goes from right to left
   if (isReversed) {
     progressBar.classList.add("reversed");
-    progressBar.style.width = (100 - pct) + "%";
+    progressBar.style.width = 100 - pct + "%";
   } else {
     progressBar.classList.remove("reversed");
     progressBar.style.width = pct + "%";
   }
-  
+
   currentTimeEl.textContent = formatTime(audio.currentTime);
   totalTimeEl.textContent =
     "-" + formatTime(audio.duration - audio.currentTime);
@@ -1355,9 +1611,13 @@ seekBar.addEventListener("touchend", () => (isDragging = false));
 
 // Prevent pinch zoom on mobile
 document.addEventListener("gesturestart", (e) => e.preventDefault());
-document.addEventListener("touchmove", function(e) {
-  if (e.touches.length > 1) e.preventDefault();
-}, { passive: false });
+document.addEventListener(
+  "touchmove",
+  function (e) {
+    if (e.touches.length > 1) e.preventDefault();
+  },
+  { passive: false },
+);
 
 // Hover tooltip
 seekBar.addEventListener("mousemove", (e) => {
