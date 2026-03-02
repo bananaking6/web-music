@@ -692,6 +692,7 @@ input[type="range"]::-webkit-slider-runnable-track {
     position: absolute;
     top: 0;
     left: 0;
+    transition: width 0.08s linear !important;
 }
 
 .buffer-bar {
@@ -702,6 +703,7 @@ input[type="range"]::-webkit-slider-runnable-track {
     top: 0;
     left: 0;
     opacity: 0.5;
+    transition: width 0.1s ease !important;
 }
 
 .progress-bar::after {

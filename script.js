@@ -1,5 +1,5 @@
 let PROXY = "https://api.codetabs.com/v1/proxy/?quest=";
-//PROXY = "";
+PROXY = "";
 const API = PROXY + "https://api.monochrome.tf";
 const IMG = PROXY + "https://resources.tidal.com/images/";
 const audio = document.getElementById("audio");
@@ -501,34 +501,12 @@ async function loadLyrics(track) {
 
 audio.ontimeupdate = () => {
   saveSessionStorage();
-  if (!words.length && !lines.length) return;
+  if (!lines.length) return;
 
   const now = audio.currentTime * 1000; // in ms
-  let currentWordOrLine = null;
+  let currentLine = null;
 
-  // --- Word by word highlighting ---
-  for (let i = 0; i < words.length; i++) {
-    const w = words[i];
-    const start = w.time;
-    const end = w.time + w.duration;
-
-    if (now >= start && now <= end) {
-      const progress = (now - start) / w.duration;
-      w.el.classList.add("active");
-      w.el.style.setProperty("--p", progress);
-      currentWordOrLine = w;
-    } else if (now > end) {
-      w.el.classList.add("old");
-      w.el.classList.add("active");
-      w.el.style.setProperty("--p", 1);
-    } else {
-      w.el.classList.remove("active");
-      w.el.classList.remove("old");
-      w.el.style.setProperty("--p", 0);
-    }
-  }
-
-  // --- Line by line highlighting fallback ---
+  // --- Line by line highlighting ---
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const start = line.time;
@@ -538,7 +516,7 @@ audio.ontimeupdate = () => {
       const progress = (now - start) / line.duration;
       line.el.classList.add("active");
       line.el.style.setProperty("--p", progress);
-      currentWordOrLine ??= { el: line.el }; // scroll line if no word active
+      currentLine ??= { el: line.el }; // scroll line if no word active
     } else if (now > end || now < start) {
       line.el.classList.remove("active");
       line.el.style.setProperty("--p", 0);
@@ -1134,6 +1112,14 @@ function updateProgress() {
   }
 }
 
+let animationFrameId;
+function smoothUpdate() {
+  updateProgress();
+  if (!audio.paused && audio.duration) {
+    animationFrameId = requestAnimationFrame(smoothUpdate);
+  }
+}
+
 function seek(clientX) {
   const rect = seekBar.getBoundingClientRect();
   const pct = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
@@ -1208,6 +1194,17 @@ seekBar.addEventListener("mouseleave", () => {
 });
 
 // Auto update
-audio.addEventListener("timeupdate", updateProgress);
-audio.addEventListener("progress", updateProgress);
+audio.addEventListener("play", () => {
+  updateProgress();
+  smoothUpdate();
+});
+// Auto update on start
+audio.addEventListener("canplay", () => {
+  updateProgress();
+  if (!audio.paused) smoothUpdate();
+});
+audio.addEventListener("pause", () => {
+  if (animationFrameId) cancelAnimationFrame(animationFrameId);
+});
+audio.addEventListener("seeking", updateProgress);
 audio.addEventListener("loadedmetadata", updateProgress);
