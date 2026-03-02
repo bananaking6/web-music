@@ -38,7 +38,6 @@
                     >
                         Queue
                     </button>
-                    <button onclick="reverseAudio()">REVERSE SONG</button>
                     <br />
                 </section>
                 <section id="side-playlists">
@@ -171,6 +170,21 @@
                 </div>
 
                 <div style="display: flex; align-items: center; gap: 15px">
+                    <button onclick="reverseAudio()" title="Reverse" id="reverseBtn">
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M21 7v6h-6"></path>
+                            <path d="M3 17a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 7"></path>
+                        </svg>
+                    </button>
                     <button onclick="toggleLyrics()" title="Lyrics">
                         <svg
                             width="20"

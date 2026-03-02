@@ -114,13 +114,13 @@ a {
 
 /* --- Sidebar --- */
 .sidebar {
-    padding: var(--space-lg);
+    padding: var(--space-md);
     grid-row: 1 / 2;
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: var(--backdrop-blur);
     -webkit-backdrop-filter: var(--backdrop-blur);
     border-right: 1px solid rgba(255, 255, 255, 0.05);
-    gap: var(--space-xs);
+    gap: var(--space-sm);
     height: calc(100vh - 90px);
     overflow-y: auto;
 }
@@ -128,30 +128,64 @@ a {
     display: flex;
     flex-direction: column;
     gap: var(--space-xs);
+    margin-bottom: var(--space-sm);
 }
 
 .sidebar h1 {
-    font-size: 1.5rem;
+    font-size: 1.1rem;
     font-weight: 700;
-    margin-bottom: var(--space-lg);
+    margin: var(--space-sm) 0 var(--space-xs) 0;
     color: var(--main-color);
     display: flex;
     align-items: center;
     gap: var(--space-xs);
+    position: relative;
+    padding-bottom: var(--space-xs);
+}
+
+.sidebar h1::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--main-color) 0%, transparent 100%);
+    opacity: 0;
+    animation: slideUnderline 0.6s ease-out forwards;
+}
+
+@keyframes slideUnderline {
+    from {
+        width: 0;
+        opacity: 0;
+    }
+    to {
+        width: 100%;
+        opacity: 1;
+    }
 }
 
 .sidebar button {
     text-align: left;
-    padding: var(--space-sm) var(--space-md);
+    padding: var(--space-xs) var(--space-sm);
     border-radius: var(--radius-md);
     color: var(--color-text-muted);
-    font-weight: 600;
+    font-weight: 500;
+    font-size: 0.9rem;
     transition: all var(--transition-fast);
 }
 
 .sidebar button:hover {
     color: var(--color-text-base);
     background: rgba(255, 255, 255, 0.1);
+}
+
+#playlists,
+#pinned {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: var(--space-sm);
 }
 
 /* --- Main Content --- */
@@ -301,6 +335,28 @@ main {
 
 .card:hover {
     background: var(--color-bg-highlight);
+}
+
+.sidebar .card {
+    flex: 0 0 auto;
+    padding: 0;
+    width: 80px;
+    height: 80px;
+    background: transparent;
+    max-height: 80px;
+}
+
+.sidebar .card img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    margin-bottom: 0 !important;
+    box-shadow: var(--shadow-md);
+}
+
+.sidebar .card div {
+    display: none;
 }
 
 .card img {
@@ -611,6 +667,24 @@ main {
     filter: drop-shadow(0 0 5px var(--main-color));
 }
 
+#reverseBtn.active {
+    color: var(--main-color);
+}
+
+#reverseBtn.active svg {
+    filter: drop-shadow(0 0 8px var(--main-color));
+    animation: reverseSpin 0.6s ease-out;
+}
+
+@keyframes reverseSpin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(-180deg);
+    }
+}
+
 input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
@@ -691,6 +765,13 @@ input[type="range"]::-webkit-slider-runnable-track {
     top: 0;
     left: 0;
     transition: width 0.08s linear !important;
+    transform-origin: left;
+}
+
+.progress-bar.reversed {
+    left: auto;
+    right: 0;
+    transform-origin: right;
 }
 
 .buffer-bar {

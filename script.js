@@ -284,6 +284,11 @@ async function loadTrack(trackOrIndex) {
     return;
   }
 
+  // Reset reverse button state when loading new track
+  const reverseBtn = document.getElementById("reverseBtn");
+  reverseBtn?.classList.remove("active");
+  progressBar?.classList.remove("reversed");
+  
   updatePlayerUI(track, trackIndex);
   
   const trackData = await loadAudioBlob(track, trackIndex);
@@ -427,13 +432,17 @@ async function reverseAudio(trackIndex = index) {
     return;
   }
 
+  const reverseBtn = document.getElementById("reverseBtn");
+
   if (preloadedAudio[trackIndex].reversed) {
     preloadedAudio[trackIndex].reversed = false;
+    reverseBtn?.classList.remove("active");
     loadTrack(trackIndex);
     return;
   }
 
   preloadedAudio[trackIndex].reversed = true;
+  reverseBtn?.classList.add("active");
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   const ctx = new AudioCtx();
   const arrayBuffer = await cached.blob.arrayBuffer();
@@ -643,8 +652,32 @@ function loadPlaylists() {
     if (key.startsWith("playlist_")) {
       let pl = JSON.parse(localStorage.getItem(key));
       const plId = key.replace("playlist_", "");
-      const plDiv = document.createElement("button");
-      plDiv.textContent = pl.title;
+      const plDiv = document.createElement("div");
+      plDiv.className = "card";
+      plDiv.title = pl.title;
+      
+      const covers = [];
+      const seenCovers = new Set();
+      for (const t of pl.tracks) {
+        if (t.album?.cover && !seenCovers.has(t.album.cover)) {
+          seenCovers.add(t.album.cover);
+          covers.push(t.album.cover);
+          if (covers.length === 4) break;
+        }
+      }
+      
+      if (covers.length > 0) {
+        const grid = document.createElement("div");
+        grid.style.cssText = "display: grid; grid-template-columns: repeat(2, 1fr); width: 100%; height: 100%;";
+        covers.forEach((cover) => {
+          const img = document.createElement("img");
+          img.src = `${IMG}${cover.replaceAll("-", "/")}/320x320.jpg`;
+          img.style.cssText = "width: 100%; height: 100%; object-fit: cover;";
+          grid.appendChild(img);
+        });
+        plDiv.appendChild(grid);
+      }
+      
       plDiv.onclick = () => openPlaylist(plId);
       playlistsBar.appendChild(plDiv);
     }
@@ -654,14 +687,23 @@ function loadPlaylists() {
   pinnedBar.innerHTML = "";
   let pinned = JSON.parse(localStorage.getItem("pinned")) || [];
   pinned.forEach((pinnedItem) => {
-    const pDiv = document.createElement("button");
+    const pDiv = document.createElement("div");
+    pDiv.className = "card";
     if (pinnedItem[0] == "album") {
       const al = pinnedItem[1];
-      pDiv.textContent = al.title;
+      pDiv.title = al.title;
+      const img = document.createElement("img");
+      img.src = `${IMG}${al.cover.replaceAll("-", "/")}/320x320.jpg`;
+      img.style.cssText = "width: 100%; height: 100%; object-fit: cover;";
+      pDiv.appendChild(img);
       pDiv.onclick = () => openAlbum(al);
     } else if (pinnedItem[0] == "artist") {
       const ar = pinnedItem[1];
-      pDiv.textContent = ar[1];
+      pDiv.title = ar[1];
+      const img = document.createElement("img");
+      img.src = `${IMG}${ar[2].replaceAll("-", "/")}/320x320.jpg`;
+      img.style.cssText = "width: 100%; height: 100%; object-fit: cover;";
+      pDiv.appendChild(img);
       pDiv.onclick = () => openArtist(ar[0], ar[1], ar[2]);
     }
     pinnedBar.appendChild(pDiv);
@@ -736,6 +778,82 @@ function openAddToPlaylistModal(track) {
 
 function closePlaylistModal() {
   document.getElementById("playlistModal").classList.add("hidden");
+}
+
+function openAddAlbumToPlaylistModal(tracks, albumTitle) {
+  if (!tracks || tracks.length === 0) {
+    showToast("No tracks to add");
+    return;
+  }
+
+  const modal = document.getElementById("playlistModal");
+  const list = document.getElementById("playlistList");
+  const header = modal.querySelector("h3");
+  header.textContent = `Add "${albumTitle}" to Playlist`;
+  list.innerHTML = "";
+
+  modal.classList.remove("hidden");
+
+  for (let key in localStorage) {
+    if (key.startsWith("playlist_")) {
+      try {
+        let pl = JSON.parse(localStorage.getItem(key));
+        const plId = key.replace("playlist_", "");
+
+        const div = document.createElement("div");
+        div.className = "playlist-option";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.id = `chk-${plId}`;
+
+        // Check if all tracks are already in playlist
+        const tracksInPlaylist = tracks.filter((track) =>
+          pl.tracks.some((t) => t.id === track.id)
+        ).length;
+        checkbox.checked = tracksInPlaylist > 0;
+        checkbox.indeterminate = tracksInPlaylist > 0 && tracksInPlaylist < tracks.length;
+
+        checkbox.onchange = (e) => {
+          if (e.target.checked) {
+            // Add all tracks
+            tracks.forEach((track) => {
+              if (!pl.tracks.some((t) => t.id === track.id)) {
+                addToPlaylist(plId, track);
+              }
+            });
+          } else {
+            // Remove all tracks
+            tracks.forEach((track) => {
+              if (pl.tracks.some((t) => t.id === track.id)) {
+                addToPlaylist(plId, track);
+              }
+            });
+          }
+          // Refresh the playlist object
+          pl = JSON.parse(localStorage.getItem(key));
+        };
+
+        const label = document.createElement("label");
+        label.htmlFor = `chk-${plId}`;
+        label.textContent = pl.title;
+
+        div.appendChild(checkbox);
+        div.appendChild(label);
+
+        div.onclick = (e) => {
+          if (e.target !== checkbox && e.target !== label) {
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event("change"));
+          }
+        };
+
+        list.appendChild(div);
+      } catch (e) {
+        console.error("Error parsing playlist", key, e);
+      }
+    }
+  }
 }
 
 function createNewPlaylistFromModal() {
@@ -965,6 +1083,7 @@ async function openAlbum(al) {
     <div style="margin-top: 20px; display: flex; gap: 10px;">
       <button class="album-action" id="playAll">PLAY</button>
       <button class="album-action secondary" id="shufflePlay">SHUFFLE</button>
+      <button class="album-action secondary" id="addAllPlaylist">+ PLAYLIST</button>
       <button class="album-action secondary" id="extraAction" style="display: none;"></button>
       <button class="album-action secondary" id="downloadAlbum">↓</button>
     </div>
@@ -1068,6 +1187,7 @@ async function openAlbum(al) {
   // Play buttons
   el.querySelector("#playAll").onclick = () => playTracks(tracks, false);
   el.querySelector("#shufflePlay").onclick = () => playTracks(tracks, true);
+  el.querySelector("#addAllPlaylist").onclick = () => openAddAlbumToPlaylistModal(tracks, al.title);
   el.querySelector("#downloadAlbum").onclick = () => downloadAlbum(al, tracks)
 }
 
@@ -1151,8 +1271,18 @@ function formatTime(sec) {
 function updateProgress() {
   if (!audio.duration) return;
 
+  const isReversed = preloadedAudio[index]?.reversed || false;
   const pct = (audio.currentTime / audio.duration) * 100;
-  progressBar.style.width = pct + "%";
+  
+  // In reverse mode, progress goes from right to left
+  if (isReversed) {
+    progressBar.classList.add("reversed");
+    progressBar.style.width = (100 - pct) + "%";
+  } else {
+    progressBar.classList.remove("reversed");
+    progressBar.style.width = pct + "%";
+  }
+  
   currentTimeEl.textContent = formatTime(audio.currentTime);
   totalTimeEl.textContent =
     "-" + formatTime(audio.duration - audio.currentTime);
