@@ -458,32 +458,41 @@ async function loadLyrics(track) {
   url = `${API}/lyrics/?id=${track.id}`;
   data = await fetch(url).then((r) => r.json());
   data = data.lyrics.subtitles;
-  lines = data.split("\n");
+  const rawLines = data.split("\n");
 
   function parseTimeToMs(timeStr) {
+    // Format: MM:SS.MS or M:SS.MS
     const [minutes, seconds] = timeStr.split(":");
     return (parseInt(minutes, 10) * 60 + parseFloat(seconds)) * 1000;
   }
 
-  lines.forEach((line, index) => {
+  // Parse all lines to get timestamps
+  const parsedLines = [];
+  rawLines.forEach((line) => {
     const match = line.match(/\[(\d+:\d+\.\d+)\]\s*(.*)/);
-    if (!match) return;
+    if (match) {
+      const timeMs = parseTimeToMs(match[1]);
+      const text = match[2];
+      parsedLines.push({ time: timeMs, text });
+    }
+  });
 
-    const timeMs = parseTimeToMs(match[1]);
-    const text = match[2];
-
-    let durationMs = audio.duration * 1000 - timeMs;
-
+  // Create line elements with proper durations
+  parsedLines.forEach((lineData, index) => {
+    const durationMs = (index + 1 < parsedLines.length) 
+      ? parsedLines[index + 1].time - lineData.time
+      : audio.duration * 1000 - lineData.time;
 
     const lineDiv = document.createElement("div");
     lineDiv.className = "lyric-line";
-    lineDiv.innerText = text;
-    lineDiv.dataset.time = timeMs; // milliseconds
-    lineDiv.dataset.duration = durationMs; // milliseconds
-    lines.push({ time: timeMs, duration: durationMs, el: lineDiv });
+    lineDiv.innerText = lineData.text;
+    lineDiv.dataset.time = lineData.time;
+    lineDiv.dataset.duration = durationMs;
+    
+    lines.push({ time: lineData.time, duration: durationMs, el: lineDiv });
 
     lineDiv.onclick = () => {
-      audio.currentTime = timeMs / 1000;
+      audio.currentTime = lineData.time / 1000;
     };
 
     lyricsView.appendChild(lineDiv);
