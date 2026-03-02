@@ -1,5 +1,5 @@
 let PROXY = "https://api.codetabs.com/v1/proxy/?quest=";
-PROXY = "";
+//PROXY = "";
 const API = PROXY + "https://api.monochrome.tf";
 const IMG = PROXY + "https://resources.tidal.com/images/";
 const audio = document.getElementById("audio");
@@ -1202,3 +1202,4 @@ seekBar.addEventListener("mouseleave", () => {
 audio.addEventListener("timeupdate", updateProgress);
 audio.addEventListener("progress", updateProgress);
 audio.addEventListener("loadedmetadata", updateProgress);
+
