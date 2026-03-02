@@ -234,7 +234,7 @@ function adjustColor(hex, percent) {
 }
 
 async function getTrackUrl(track) {
-  const res = await fetch(`${API}/track/?id=${track.id}%26quality=LOW`);
+  const res = await fetch(`${API}/track/?id=${track.id}${PROXY ? "%26" : "&"}quality=LOW`);
   const data = await res.json();
   return PROXY + JSON.parse(atob(data.data.manifest)).urls[0];
 }
@@ -1202,4 +1202,3 @@ seekBar.addEventListener("mouseleave", () => {
 audio.addEventListener("timeupdate", updateProgress);
 audio.addEventListener("progress", updateProgress);
 audio.addEventListener("loadedmetadata", updateProgress);
-
