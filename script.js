@@ -234,7 +234,7 @@ function adjustColor(hex, percent) {
 }
 
 async function getTrackUrl(track) {
-  const res = await fetch(`${API}/track/?id=${track.id}&quality=LOW`);
+  const res = await fetch(`${API}/track/?id=${track.id}%26quality=LOW`);
   const data = await res.json();
   return PROXY + JSON.parse(atob(data.data.manifest)).urls[0];
 }
