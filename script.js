@@ -351,6 +351,69 @@ async function loadTrack(trackOrIndex) {
   if (trackIndex + 1 < queue.length) {
     preloadTrack(queue[trackIndex + 1], trackIndex + 1);
   }
+
+  if ("mediaSession" in navigator) {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: track.title,
+      artist: track.artists[0].name,
+      album: track.album.name,
+      artwork: [
+        {
+          src: `${IMG}${track.album.cover.replaceAll("-", "/")}/320x320.jpg`,
+          sizes: "320x320",
+          type: "image/jpeg",
+        },
+      ],
+    });
+
+    navigator.mediaSession.setActionHandler("play", () => {
+      audio.play();
+    });
+    navigator.mediaSession.setActionHandler("pause", () => {
+      audio.pause();
+    });
+    navigator.mediaSession.setActionHandler("seekbackward", (details) => {
+      const skip = details.seekOffset || 10;
+      audio.currentTime = Math.max(0, audio.currentTime - skip);
+    });
+    navigator.mediaSession.setActionHandler("seekforward", (details) => {
+      const skip = details.seekOffset || 10;
+      audio.currentTime = Math.min(
+        audio.duration || Infinity,
+        audio.currentTime + skip,
+      );
+    });
+    navigator.mediaSession.setActionHandler("seekto", (details) => {
+      if (details.fastSeek && "fastSeek" in audio) {
+        audio.fastSeek(details.seekTime);
+      } else {
+        audio.currentTime = details.seekTime;
+      }
+    });
+    navigator.mediaSession.setActionHandler("previoustrack", () => {
+      prev();
+    });
+    navigator.mediaSession.setActionHandler("nexttrack", () => {
+      next();
+    });
+
+    // Update position state when playback changes (for scrubber in some OS UIs)
+    function updatePositionState() {
+      if (
+        "setPositionState" in navigator.mediaSession &&
+        !isNaN(audio.duration)
+      ) {
+        navigator.mediaSession.setPositionState({
+          duration: audio.duration,
+          playbackRate: audio.playbackRate,
+          position: audio.currentTime,
+        });
+      }
+    }
+
+    audio.addEventListener("timeupdate", updatePositionState);
+    audio.addEventListener("ratechange", updatePositionState);
+  }
 }
 
 async function preloadTrack(track, trackIndex) {
