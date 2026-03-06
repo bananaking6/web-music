@@ -1,5 +1,5 @@
 let PROXY = "https://api.codetabs.com/v1/proxy/?quest=";
-PROXY = "";
+if (location.hostname === "localhost") PROXY = "";
 const API = PROXY + "https://api.monochrome.tf";
 const IMG = PROXY + "https://resources.tidal.com/images/";
 const audio = document.getElementById("audio");
