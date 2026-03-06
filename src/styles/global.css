@@ -1,0 +1,114 @@
+@font-face {
+    font-family: "SigmaFont";
+    src: url("/font.ttf");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    /* --- Font --- */
+    font-family: "SigmaFont", "Comic Sans MS", "Comic Sans";
+
+    /* --- Colors --- */
+    --main-color: #1db954;
+    --secondary-color: #169c46;
+    --color-bg-base: #0a0a0a;
+    --color-bg-surface: #121212;
+    --color-bg-elevated: #181818;
+    --color-bg-highlight: #282828;
+    --color-text-base: #ffffff;
+    --color-text-muted: #b3b3b3;
+    --color-text-subtle: #808080;
+    --color-border: #282828;
+
+    /* --- Spacing --- */
+    --space-2xs: 4px;
+    --space-xs: 8px;
+    --space-sm: 12px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-2xl: 64px;
+
+    /* --- UI Elements --- */
+    --sidebar-width: 240px;
+    --player-height: 90px;
+    --radius-sm: 2px;
+    --radius-md: 4px;
+    --radius-lg: 8px;
+    --radius-full: 4px;
+
+    /* --- Effects --- */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --shadow-glow: 0 0 20px rgba(29, 185, 84, 0.3);
+    --backdrop-blur: blur(20px);
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* --- Reset & Base --- */
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--color-bg-base);
+    color: var(--color-text-base);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+input,
+textarea {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+img {
+    display: block;
+    max-width: 100%;
+}
+
+button {
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    outline: none;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* --- Utilities --- */
+.hidden {
+    display: none !important;
+}
+
+.view {
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

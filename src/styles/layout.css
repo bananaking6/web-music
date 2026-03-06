@@ -1,0 +1,549 @@
+/* --- Layout --- */
+#app {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) 1fr;
+    grid-template-rows: 1fr var(--player-height);
+    height: 100vh;
+    position: relative;
+    z-index: 1;
+}
+
+/* --- Sidebar --- */
+.sidebar {
+    padding: var(--space-md);
+    grid-row: 1 / 2;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: var(--backdrop-blur);
+    -webkit-backdrop-filter: var(--backdrop-blur);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    gap: var(--space-sm);
+    height: calc(100vh - 90px);
+    overflow-y: auto;
+}
+
+.sidebar section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-sm);
+}
+
+.sidebar h1 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: var(--space-sm) 0 var(--space-xs) 0;
+    color: var(--main-color);
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    position: relative;
+    padding-bottom: var(--space-xs);
+}
+
+.sidebar h1::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--main-color) 0%, transparent 100%);
+    opacity: 0;
+    animation: slideUnderline 0.6s ease-out forwards;
+}
+
+@keyframes slideUnderline {
+    from {
+        width: 0;
+        opacity: 0;
+    }
+    to {
+        width: 100%;
+        opacity: 1;
+    }
+}
+
+.sidebar button {
+    text-align: left;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all var(--transition-fast);
+}
+
+.sidebar button:hover {
+    color: var(--color-text-base);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+#playlists,
+#pinned {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: var(--space-sm);
+}
+
+/* --- Main Content --- */
+main {
+    grid-column: 2;
+    padding: var(--space-xl);
+    overflow-y: auto;
+    position: relative;
+}
+
+/* --- Player Footer --- */
+.player-footer {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    background: rgba(24, 24, 24, 0.9);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0 var(--space-lg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 100;
+    position: relative;
+}
+
+/* --- Background --- */
+#visualizer {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.3;
+}
+
+#bg {
+    position: fixed;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    filter: blur(25px);
+    opacity: 0.2;
+    z-index: -2;
+    transition: background-image 1s ease;
+}
+
+/* --- Mobile Bottom Navigation --- */
+.mobile-nav {
+    position: fixed;
+    bottom: var(--player-height);
+    left: 0;
+    right: 0;
+    height: 48px;
+    background: rgba(18, 18, 18, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 99;
+    gap: 0;
+}
+
+.mobile-nav button {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+    transition: all var(--transition-fast);
+    padding: 0 var(--space-md);
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    border-radius: 0;
+}
+
+.mobile-nav button:active {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.mobile-nav button.active {
+    color: var(--main-color);
+}
+
+.mobile-nav button:hover {
+    color: var(--color-text-base);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* --- Mobile Responsive --- */
+@media (max-width: 768px) {
+    :root {
+        --sidebar-width: 0;
+        --player-height: 110px;
+    }
+
+    #app {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 48px var(--player-height);
+        height: 100vh;
+    }
+
+    .mobile-nav:not(.hidden) {
+        display: flex !important;
+    }
+
+    .mobile-nav.hidden {
+        display: none !important;
+    }
+
+    .sidebar {
+        display: none;
+    }
+
+    main {
+        grid-column: 1;
+        grid-row: 1;
+        padding: var(--space-lg);
+        padding-bottom: var(--space-xl);
+    }
+
+    .player-footer {
+        grid-column: 1;
+        grid-row: 2;
+        padding: var(--space-md);
+        gap: var(--space-md);
+        flex-wrap: wrap;
+        min-height: var(--player-height);
+    }
+
+    .player-seek-container {
+        width: 100%;
+        order: -1;
+    }
+
+    .player-info {
+        width: auto;
+        min-width: 0;
+        flex: 1;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        gap: var(--space-xs);
+    }
+
+    #playerCover {
+        width: 40px;
+        height: 40px;
+    }
+
+    #playerTitle,
+    #playerArtist {
+        font-size: 0.85rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    #playerTitle {
+        display: flex;
+        align-items: center;
+        gap: var(--space-xs);
+    }
+
+    #playerExplicit {
+        width: 12px;
+        height: 12px;
+        flex-shrink: 0;
+    }
+
+    #playerArtist {
+        font-size: 0.75rem;
+        color: var(--color-text-muted);
+    }
+
+    .player-controls {
+        display: flex;
+        width: 100%;
+        justify-content: center;
+        gap: var(--space-md);
+        align-items: center;
+    }
+
+    #currentTime,
+    #totalTimeEl {
+        font-size: 0.75rem;
+        margin: 0 var(--space-xs);
+    }
+
+    .player-controls button {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .player-controls button:nth-child(3) {
+        width: 50px;
+        height: 50px;
+    }
+
+    .player-controls button svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    #queueView {
+        position: fixed;
+        width: 100%;
+        right: 0;
+        height: calc(100vh - var(--player-height));
+        border-left: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding: var(--space-lg);
+        transform: translateY(100%);
+        z-index: 90;
+    }
+
+    #queueView:not(.hidden) {
+        transform: translateY(0);
+    }
+
+    #lyricsView {
+        padding: var(--space-lg);
+        bottom: var(--player-height);
+    }
+
+    .lyric-line {
+        font-size: 1.2rem;
+    }
+
+    #playlistModal .modal-content {
+        width: 95%;
+    }
+
+    .playlist-option {
+        padding: var(--space-md);
+        min-height: 48px;
+    }
+
+    .playlist-option input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+    }
+
+    .toast {
+        bottom: calc(var(--player-height) + 10px);
+        width: 90%;
+        left: 5%;
+    }
+
+    .search-header {
+        margin-bottom: var(--space-lg);
+    }
+
+    #searchInput {
+        max-width: 100%;
+        padding: var(--space-md);
+        font-size: 16px;
+    }
+
+    .home-hero {
+        position: relative;
+        top: unset;
+        left: unset;
+        transform: none;
+        padding: var(--space-xl) 0;
+    }
+
+    .home-title {
+        font-size: 2rem;
+        margin-bottom: var(--space-md);
+    }
+
+    .home-subtitle {
+        font-size: 1rem;
+        margin-bottom: var(--space-lg);
+    }
+
+    .home-actions {
+        flex-direction: column;
+        gap: var(--space-md);
+    }
+
+    .home-button {
+        width: 100%;
+        padding: var(--space-lg) var(--space-md);
+        font-size: 1rem;
+    }
+
+    .cards {
+        margin: 0 calc(var(--space-lg) * -1);
+        padding-left: var(--space-lg);
+        padding-right: var(--space-lg);
+    }
+
+    .card {
+        flex: 0 0 160px;
+        min-width: 160px;
+    }
+
+    #album {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--space-lg);
+    }
+
+    #albumCover,
+    .playlist-cover {
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto;
+    }
+
+    #album > div:nth-child(2) {
+        text-align: center;
+    }
+
+    #album h2 {
+        font-size: 1.5rem;
+    }
+
+    #album h3 {
+        font-size: 1.1rem;
+    }
+
+    #albumInfo {
+        font-size: 0.9rem;
+    }
+
+    #albumTracks {
+        margin-top: var(--space-lg);
+    }
+
+    .song-row {
+        padding: var(--space-md);
+        min-height: 48px;
+    }
+
+    .album-action {
+        flex: 1;
+        min-height: 44px;
+        font-size: 0.9rem;
+    }
+
+    #artistBanner img {
+        width: 100%;
+        max-width: 300px;
+    }
+
+    #artist h2 {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    :root {
+        --space-lg: 16px;
+        --space-xl: 20px;
+        --player-height: 140px;
+    }
+
+    #app {
+        grid-template-rows: 1fr var(--player-height);
+    }
+
+    main {
+        padding: var(--space-md);
+    }
+
+    .home-title {
+        font-size: 1.5rem;
+    }
+
+    #searchInput {
+        padding: var(--space-md);
+        font-size: 16px;
+    }
+
+    .card {
+        flex: 0 0 140px;
+    }
+
+    .cards {
+        gap: var(--space-md);
+    }
+
+    #album h2 {
+        font-size: 1.25rem;
+    }
+
+    #album h3 {
+        font-size: 1rem;
+    }
+
+    #albumCover,
+    .playlist-cover {
+        max-width: 250px;
+    }
+
+    .song-row {
+        padding: var(--space-sm);
+        font-size: 0.9rem;
+    }
+
+    .player-footer {
+        gap: var(--space-sm);
+    }
+
+    .player-controls {
+        gap: var(--space-sm);
+    }
+
+    .player-controls button svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    #playerTitle {
+        font-size: 0.75rem;
+    }
+
+    #playerArtist {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .mobile-menu-btn {
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        z-index: 999;
+        width: 44px;
+        height: 44px;
+        background: rgba(0, 0, 0, 0.6);
+        border: none;
+        border-radius: 50%;
+        color: #fff;
+        font-size: 24px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(10px);
+    }
+
+    .mobile-close-btn {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 44px;
+        height: 44px;
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 28px;
+        cursor: pointer;
+        z-index: 1001;
+    }
+}

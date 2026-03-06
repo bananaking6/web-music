@@ -1,0 +1,74 @@
+---
+// Base layout with sidebar, mobile nav, main content area, and player footer
+import Sidebar from '../components/Sidebar.astro';
+import MobileNav from '../components/MobileNav.astro';
+import Player from '../components/Player.astro';
+import Visualizer from '../components/Visualizer.astro';
+
+import '../styles/global.css';
+import '../styles/layout.css';
+import '../styles/components.css';
+
+interface Props {
+  title?: string;
+}
+
+const { title = '𝚺 Music' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"
+    />
+    <meta name="apple-mobile-web-app-capable" content="true" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <title>{title}</title>
+    <link rel="icon" href="/icon.svg" />
+  </head>
+  <body>
+    <Visualizer />
+    <div id="app">
+      <Sidebar />
+      <MobileNav />
+      <main>
+        <slot />
+        <section id="artist" class="view hidden"></section>
+        <section id="album" class="view hidden"></section>
+      </main>
+      <Player />
+    </div>
+
+    <!-- Overlays -->
+    <div id="lyricsView" class="hidden"></div>
+    <div id="queueView" class="hidden"></div>
+
+    <!-- Playlist modal -->
+    <div id="playlistModal" class="hidden">
+      <div class="modal-content">
+        <h3>Save to Playlist</h3>
+        <div id="playlistList" style="max-height:300px;overflow-y:auto;"></div>
+        <div class="modal-actions">
+          <button class="modal-btn cancel" id="closePlaylistModalBtn">
+            Done
+          </button>
+          <button class="modal-btn create hidden" id="createPlaylistModalBtn">
+            + New Playlist
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <audio id="audio" crossorigin="anonymous"></audio>
+
+    <script>
+      import '../scripts/main.js';
+    </script>
+  </body>
+</html>

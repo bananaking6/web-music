@@ -1,0 +1,13 @@
+---
+// Reusable card component for albums, artists, and songs
+interface Props {
+  img?: string;
+  title: string;
+}
+const { img = "", title } = Astro.props;
+---
+
+<div class="card" title={title}>
+  <img src={img} alt={title} />
+  <span>{title}</span>
+</div>
