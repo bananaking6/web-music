@@ -48,6 +48,8 @@ function openPlaylist(id) {
       title: pl.title,
       type: "PLAYLIST",
       cover: pl.cover || "5806b59b-2f3d-4d0a-8541-e75de4e58f2c",
+      // Use getDate()-1 because formatDate() adds +1 day to correct for UTC
+      // parsing; together they display today's date correctly.
       releaseDate: `${new Date().getFullYear()}-${new Date().getMonth() + 1}-${new Date().getDate() - 1}`,
       artists: [{ name: "You" }],
       playlistTracks: pl.tracks || [],
@@ -809,6 +811,8 @@ document.getElementById("queueSidebarBtn")?.addEventListener("click", () => {
     title: "Queue",
     type: "PLAYLIST",
     cover: "",
+    // Use getDate()-1 because formatDate() adds +1 day to correct for UTC
+    // parsing; together they display today's date correctly.
     releaseDate: `${new Date().getFullYear()}-${new Date().getMonth() + 1}-${new Date().getDate() - 1}`,
     artists: [{ name: "Various Artists" }],
     playlistTracks: queue,
