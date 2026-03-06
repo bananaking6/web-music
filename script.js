@@ -444,7 +444,10 @@ function togglePlay() {
 }
 
 function toggleLyrics() {
-  lyricsView.classList.toggle("hidden");
+  if (lyricsView.innerHTML == "") {
+    lyricsView.classList.add("hidden");
+    showToast("No lyrics available");
+  } else lyricsView.classList.toggle("hidden");
 }
 
 function releaseTrack(trackIndex = index) {
@@ -458,7 +461,7 @@ function releaseTrack(trackIndex = index) {
 function downloadTrack(trackIndex = index) {
   const cached = preloadedAudio[trackIndex];
   if (!cached) {
-    alert("Track not preloaded yet");
+    showToast("No track selected");
     return;
   }
   const a = document.createElement("a");
@@ -471,7 +474,7 @@ function downloadTrack(trackIndex = index) {
 
 async function downloadAlbum(album, tracks) {
   if (!tracks || tracks.length === 0) {
-    alert("No tracks to download");
+    showToast("No tracks in album to download");
     return;
   }
 
@@ -547,7 +550,7 @@ async function reverseAudio(trackIndex = index) {
   audio.pause();
   const cached = preloadedAudio[trackIndex];
   if (!cached?.blob) {
-    alert("Track not preloaded yet!");
+    showToast("No track selected");
     return;
   }
 
@@ -804,7 +807,7 @@ function loadPlaylists() {
       if (covers.length > 0) {
         const grid = document.createElement("div");
         grid.style.cssText =
-          "display: grid; grid-template-columns: repeat(2, 1fr); width: 100%; height: 100%; background-color:pink;";
+          "display: grid; grid-template-columns: repeat(2, 1fr); width: 100%; height: 100%;";
         covers.forEach((cover) => {
           const img = document.createElement("img");
           img.src = `${IMG}${cover.replaceAll("-", "/")}/320x320.jpg`;
