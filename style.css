@@ -569,9 +569,12 @@ main {
     padding-top: var(--space-lg);
 }
 
+#albumTitle {
+    outline: none;
+}
+
 #albumTitle:hover {
     color: var(--main-color);
-    outline: none;
 }
 
 /* --- Player Footer --- */
