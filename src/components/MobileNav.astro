@@ -6,3 +6,30 @@
   <button id="navHome" title="Home">Home</button>
   <button id="navSearch" title="Search">Search</button>
 </nav>
+
+<script>
+  import { showView } from "../scripts/ui.js";
+
+  const mobileNav = document.getElementById("mobileNav");
+  const navButtons = mobileNav?.querySelectorAll("button");
+
+  function updateNavVisibility() {
+    mobileNav?.classList.toggle("hidden", window.innerWidth > 768);
+  }
+
+  function updateNavHighlight() {
+    const active = document.querySelector(".view:not(.hidden)");
+    if (!active) return;
+    navButtons?.forEach((btn) => btn.classList.remove("active"));
+    if (active.id === "home") document.getElementById("navHome")?.classList.add("active");
+    if (active.id === "search") document.getElementById("navSearch")?.classList.add("active");
+  }
+
+  document.getElementById("navHome")?.addEventListener("click", () => { showView("home"); setTimeout(updateNavHighlight, 50); });
+  document.getElementById("navSearch")?.addEventListener("click", () => { showView("search"); setTimeout(updateNavHighlight, 50); });
+
+  window.addEventListener("showViewEvent", updateNavHighlight);
+  window.addEventListener("resize", updateNavVisibility);
+  updateNavVisibility();
+  updateNavHighlight();
+</script>

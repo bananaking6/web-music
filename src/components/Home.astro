@@ -16,3 +16,11 @@
     </div>
   </div>
 </section>
+
+<script>
+  import { showView } from "../scripts/ui.js";
+  import { openPlaylist } from "../scripts/playlists.js";
+
+  document.getElementById("homeSearchBtn")?.addEventListener("click", () => showView("search"));
+  document.getElementById("homeFavoritesBtn")?.addEventListener("click", () => openPlaylist("favorites"));
+</script>

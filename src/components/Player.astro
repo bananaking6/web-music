@@ -158,3 +158,25 @@
     </button>
   </div>
 </footer>
+
+<script>
+  import {
+    prev,
+    next,
+    togglePlay,
+    reverseAudio,
+    toggleLyrics,
+    toggleQueue,
+    downloadTrack,
+  } from "../scripts/player.js";
+  import { openAddToPlaylistModal } from "../scripts/playlists.js";
+
+  document.getElementById("btnPrev")?.addEventListener("click", prev);
+  document.getElementById("btnPlay")?.addEventListener("click", togglePlay);
+  document.getElementById("btnNext")?.addEventListener("click", next);
+  document.getElementById("reverseBtn")?.addEventListener("click", () => reverseAudio());
+  document.getElementById("lyricsBtn")?.addEventListener("click", toggleLyrics);
+  document.getElementById("queueBtn")?.addEventListener("click", toggleQueue);
+  document.getElementById("addToPlaylistBtn")?.addEventListener("click", () => openAddToPlaylistModal());
+  document.getElementById("downloadBtn")?.addEventListener("click", () => downloadTrack());
+</script>

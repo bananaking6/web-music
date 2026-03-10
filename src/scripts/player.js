@@ -3,7 +3,7 @@
  * seek bar, session storage, and Media Session API integration.
  */
 
-import { API, IMG, PROXY, getTrackUrl } from "./api.js";
+import { IMG, imgUrl, getTrackUrl, fetchLyrics, fetchAlbumData } from "./api.js";
 import { showToast, formatTime, showView } from "./ui.js";
 import { initAudioContext } from "./visualizer.js";
 
@@ -119,9 +119,7 @@ export async function loadAudioBlob(track, trackIndex) {
  * @param {number} trackIndex
  */
 function updatePlayerUI(track, trackIndex) {
-  const img = track?.album?.cover
-    ? `${IMG}${track.album.cover.replaceAll("-", "/")}/320x320.jpg`
-    : "";
+  const img = track?.album?.cover ? imgUrl(track.album.cover) : "";
   if (link) link.href = img;
   document.getElementById("playerCover").src = img;
   document.getElementById("bg").style.backgroundImage = `url(${img})`;
@@ -199,7 +197,7 @@ export async function loadTrack(trackOrIndex) {
       album: track.album.name,
       artwork: [
         {
-          src: `${IMG}${track.album.cover.replaceAll("-", "/")}/320x320.jpg`,
+          src: imgUrl(track.album.cover),
           sizes: "320x320",
           type: "image/jpeg",
         },
@@ -471,23 +469,19 @@ export async function loadLyrics(track) {
   lines = [];
 
   try {
-    const url = `${API}/lyrics/?id=${track.id}`;
-    const data = await fetch(url).then((r) => r.json());
-    const rawText = data.lyrics.subtitles;
-    const rawLines = rawText.split("\n");
+    const rawText = await fetchLyrics(track.id);
+    if (!rawText) return;
 
-    function parseTimeToMs(timeStr) {
-      const [minutes, seconds] = timeStr.split(":");
-      return (parseInt(minutes, 10) * 60 + parseFloat(seconds)) * 1000;
-    }
+    const parseTimeToMs = (s) => {
+      const [min, sec] = s.split(":");
+      return (parseInt(min, 10) * 60 + parseFloat(sec)) * 1000;
+    };
 
-    const parsedLines = [];
-    rawLines.forEach((line) => {
-      const match = line.match(/\[(\d+:\d+\.\d+)\]\s*(.*)/);
-      if (match) {
-        parsedLines.push({ time: parseTimeToMs(match[1]), text: match[2] });
-      }
-    });
+    const parsedLines = rawText
+      .split("\n")
+      .map((l) => l.match(/\[(\d+:\d+\.\d+)\]\s*(.*)/))
+      .filter(Boolean)
+      .map((m) => ({ time: parseTimeToMs(m[1]), text: m[2] }));
 
     parsedLines.forEach((lineData, i) => {
       const durationMs =
@@ -498,13 +492,8 @@ export async function loadLyrics(track) {
       const lineDiv = document.createElement("div");
       lineDiv.className = "lyric-line";
       lineDiv.innerText = lineData.text;
-      lineDiv.dataset.time = lineData.time;
-      lineDiv.dataset.duration = durationMs;
-
       lines.push({ time: lineData.time, duration: durationMs, el: lineDiv });
-      lineDiv.onclick = () => {
-        audio.currentTime = lineData.time / 1000;
-      };
+      lineDiv.onclick = () => (audio.currentTime = lineData.time / 1000);
       lyricsView.appendChild(lineDiv);
     });
   } catch {
@@ -555,9 +544,7 @@ document.getElementById("playerArtist").addEventListener("click", () => {
 document.getElementById("playerCover").addEventListener("click", () => {
   const track = queue[index];
   if (!track || !_openAlbum) return;
-  fetch(`${API}/album/?id=${track.album.id}`)
-    .then((r) => r.json())
-    .then((data) => _openAlbum(data.data));
+  fetchAlbumData(track.album.id).then((data) => data && _openAlbum(data));
 });
 
 /* --- Session Storage --- */

@@ -40,15 +40,15 @@ export function formatTime(sec) {
 }
 
 /**
- * Format an ISO date string into a localised readable string.
+ * Format an ISO date string (YYYY-MM-DD) into a localised readable string.
+ * Replaces dashes with slashes so the date is parsed as local time, not UTC.
  * @param {string} dateStr
  * @returns {string}
  */
 export function formatDate(dateStr) {
   if (!dateStr) return "";
   try {
-    const date = new Date(dateStr);
-    date.setDate(date.getDate() + 1);
+    const date = new Date(dateStr.replace(/-/g, "/"));
     return date.toLocaleDateString(undefined, {
       year: "numeric",
       month: "long",
@@ -57,6 +57,15 @@ export function formatDate(dateStr) {
   } catch {
     return "";
   }
+}
+
+/** Return today's date as a YYYY-MM-DD string in local time. */
+export function todayISO() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 /**

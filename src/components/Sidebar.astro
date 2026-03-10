@@ -20,3 +20,28 @@
     <section id="pinned"></section>
   </section>
 </aside>
+
+<script>
+  import { showView, todayISO } from "../scripts/ui.js";
+  import { createPlaylist } from "../scripts/playlists.js";
+  import { openAlbum } from "../scripts/browse.js";
+  import { queue } from "../scripts/player.js";
+
+  document.getElementById("sideHome")?.addEventListener("click", () => showView("home"));
+  document.getElementById("sideSearch")?.addEventListener("click", () => showView("search"));
+  document.getElementById("sideNewPlaylist")?.addEventListener("click", () => createPlaylist());
+
+  document.getElementById("queueSidebarBtn")?.addEventListener("click", () => {
+    openAlbum({
+      title: "Queue",
+      type: "PLAYLIST",
+      cover: "5806b59b-2f3d-4d0a-8541-e75de4e58f2c",
+      releaseDate: todayISO(),
+      artists: [{ name: "Various Artists" }],
+      playlistTracks: queue,
+      duration: queue.reduce((sum, t) => sum + (t.duration || 0), 0),
+      numberOfTracks: queue.length,
+      id: "queue",
+    });
+  });
+</script>
