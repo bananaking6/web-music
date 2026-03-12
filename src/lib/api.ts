@@ -99,6 +99,16 @@ export async function fetchSimilarAlbums(id: string): Promise<any | null> {
   }
 }
 
+/** Fetch full track data by Tidal ID */
+export async function fetchTidalTrack(id: string): Promise<any | null> {
+  try {
+    const data = await fetchWithRetry(`${API}/info/?id=${id}`);
+    return data?.data ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Build a cover image URL from a cover id */
 export function coverUrl(cover: string | undefined, size = "320x320"): string {
   if (!cover) return "";

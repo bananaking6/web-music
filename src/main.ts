@@ -17,6 +17,7 @@ import {
   openAddToPlaylistModal,
   clearHistory,
 } from "./components/Playlists";
+import { initTransfer } from "./components/Transfer";
 import {
   togglePlay,
   next,
@@ -67,13 +68,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   initSearch();
   initPlayer();
   initLyrics();
+  initTransfer();
 
   // Initialize default playlists first so they exist when loading UI
   const { initializeDefaultPlaylists } = await import("./lib/localStorage");
   await initializeDefaultPlaylists();
 
   // Load playlists into UI after defaults are created
-  await initPlaylists();
+  const { loadPlaylists } = await import("./components/Playlists");
+  await loadPlaylists();
 
   // Restore session if available
   loadSessionStorage();

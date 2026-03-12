@@ -220,9 +220,9 @@ export async function buildPlaylistListForModal(options: {
     checkbox.type = "checkbox";
     checkbox.id = `chk-${id}`;
 
-    const tracksInPlaylist = tracks.filter((t) =>
-      pl!.tracks.some((p: any) => p.id === t.id),
-    ).length;
+    const tracksInPlaylist = tracks.filter((t) => {
+      return pl!.tracks.some((p: any) => p.id === t.id);
+    }).length;
 
     if (tracks.length === 1) {
       checkbox.checked = tracksInPlaylist === 1;
