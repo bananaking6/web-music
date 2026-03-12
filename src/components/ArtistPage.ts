@@ -175,12 +175,30 @@ async function renderArtistContent(id: string, name: string, pic: string) {
     row.innerHTML = `<h3>${title}</h3>`;
     const container = document.createElement("div");
     container.className = "cards";
+    
+    // Group albums by title, deduplicate
+    const groupedByTitle = new Map<string, any[]>();
     items.forEach((al) => {
-      const img = al.cover ? coverUrl(al.cover) : "";
-      const card = createCard(img, al.title, () => {
-        import("../components/AlbumPage").then(({ openAlbum }) => openAlbum(al));
+      const titleKey = al.title.toLowerCase();
+      if (!groupedByTitle.has(titleKey)) {
+        groupedByTitle.set(titleKey, []);
+      }
+      groupedByTitle.get(titleKey)!.push(al);
+    });
+    
+    groupedByTitle.forEach((versions) => {
+      // Use explicit version if available, otherwise use first
+      const primary = versions.find((v) => v.explicit) || versions[0];
+      const cleanVersion = versions.find((v) => !v.explicit);
+      
+      const img = primary.cover ? coverUrl(primary.cover) : "";
+      const card = createCard(img, primary.title, () => {
+        import("../components/AlbumPage").then(({ openAlbum }) => openAlbum(primary));
       });
-      if (al.explicit) {
+      
+      card.style.position = "relative";
+      
+      if (primary.explicit) {
         const explicitImg = document.createElement("img");
         explicitImg.src = "e.svg";
         explicitImg.style.position = "absolute";
@@ -188,11 +206,34 @@ async function renderArtistContent(id: string, name: string, pic: string) {
         explicitImg.style.right = "4px";
         explicitImg.style.width = "16px";
         explicitImg.style.height = "16px";
-        card.style.position = "relative";
         card.appendChild(explicitImg);
       }
+      
+      // Add "view clean" button only if primary is explicit and there's a clean version
+      if (primary.explicit && cleanVersion) {
+        const viewCleanBtn = document.createElement("button");
+        viewCleanBtn.textContent = "view clean";
+        viewCleanBtn.style.position = "absolute";
+        viewCleanBtn.style.bottom = "8px";
+        viewCleanBtn.style.left = "8px";
+        viewCleanBtn.style.padding = "4px 8px";
+        viewCleanBtn.style.fontSize = "0.7rem";
+        viewCleanBtn.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
+        viewCleanBtn.style.color = "white";
+        viewCleanBtn.style.border = "1px solid rgba(255, 255, 255, 0.3)";
+        viewCleanBtn.style.borderRadius = "4px";
+        viewCleanBtn.style.cursor = "pointer";
+        viewCleanBtn.style.fontWeight = "bold";
+        viewCleanBtn.onclick = (e) => {
+          e.stopPropagation();
+          import("../components/AlbumPage").then(({ openAlbum }) => openAlbum(cleanVersion));
+        };
+        card.appendChild(viewCleanBtn);
+      }
+      
       container.appendChild(card);
     });
+    
     row.appendChild(container);
     content.appendChild(row);
   };
