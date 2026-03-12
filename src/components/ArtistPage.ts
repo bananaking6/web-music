@@ -74,17 +74,29 @@ async function renderArtistContent(id: string, name: string, pic: string) {
         <span style="font-size: 0.9rem; color: var(--color-text-muted); display: block; margin-top: var(--space-xs);">ID: ${id}</span>
       </div>
     </div>
+    <div style="padding: 20px; display: flex; gap: 10px;">
+      <button class="album-action" id="createPlaylistBtn">+ CREATE PLAYLIST</button>
+      <button class="album-action secondary" id="pinBtn">📌 PIN</button>
+    </div>
     <div id="artistContent"></div>
   `;
   
   // Add to view history with full picture URL (matching AlbumPage pattern)
   addToViewHistory(id, name, "artist", coverUrl(pic));
 
-  // Toggle pin on artist name click
-  el.querySelector("h2")!.addEventListener("click", () => {
-    togglePinnedArtist(id, name, pic);
-    loadPlaylists();
+  // Handle create playlist button
+  el.querySelector("#createPlaylistBtn")!.addEventListener("click", async () => {
+    const { createArtistPlaylist } = await import("../components/Playlists");
+    await createArtistPlaylist(id, name);
   });
+
+  // Handle pin button
+  el.querySelector("#pinBtn")!.addEventListener("click", () => {
+    togglePinnedArtist(id, name, pic);
+    import("../components/Playlists").then(({ loadPlaylists }) => loadPlaylists());
+  });
+
+  // Keep the h2 click handler removed since we have a separate pin button now
 
   const content = document.getElementById("artistContent")!;
   

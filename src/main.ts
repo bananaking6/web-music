@@ -16,6 +16,8 @@ import {
   createNewPlaylistFromModal,
   openAddToPlaylistModal,
   clearHistory,
+  createPlaylistAndRefresh,
+  addCurrentTrackToPlaylist,
 } from "./components/Playlists";
 import { initTransfer } from "./components/Transfer";
 import {
@@ -49,6 +51,8 @@ window.createNewPlaylistFromModal = createNewPlaylistFromModal;
 window.createPlaylist = createPlaylist;
 window.openPlaylist = openPlaylist;
 window.clearHistory = clearHistory;
+window.createPlaylistAndRefresh = createPlaylistAndRefresh;
+window.addCurrentTrackToPlaylist = addCurrentTrackToPlaylist;
 
 // queue is mutated in-place so window.queue always reflects the current state
 window.queue = queue;

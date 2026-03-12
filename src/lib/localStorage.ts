@@ -148,6 +148,7 @@ export async function togglePinnedArtist(
 
   if (existing) {
     await deleteItem(STORES.PINNED, pinnedId);
+    showToast(`Unpinned "${name}"`);
   } else {
     await saveItem<PinnedItem>(STORES.PINNED, {
       id: pinnedId,
@@ -155,6 +156,7 @@ export async function togglePinnedArtist(
       title: name,
       data: [id, name, pic],
     });
+    showToast(`Pinned "${name}"`);
   }
 }
 

@@ -145,7 +145,6 @@ export async function loadPlaylists() {
 
     const plDiv = document.createElement("div");
     plDiv.className = "card";
-    plDiv.title = pl.title;
 
     // Mosaic cover from up to 4 distinct album covers in the playlist
     const covers: string[] = [];
@@ -421,7 +420,6 @@ export async function loadHistory() {
     const data = item.data;
     const card = document.createElement("div");
     card.className = "card";
-    card.title = item.title;
     
     // Create card with icon and title
     const titleDiv = document.createElement("div");
@@ -523,6 +521,158 @@ export async function clearHistory() {
 export async function createNewPlaylistFromModal() {
   await createPlaylist();
   await closePlaylistModal();
+}
+
+/** Create a new playlist from library and refresh instantly */
+export async function createPlaylistAndRefresh() {
+  await createPlaylist();
+  await loadPlaylists();
+}
+
+/** Add entire queue to a playlist */
+export async function addCurrentTrackToPlaylist() {
+  const { queue } = await import("../lib/audioPlayer");
+  if (queue.length === 0) {
+    showToast("Queue is empty");
+    return;
+  }
+  openAddAlbumToPlaylistModal(queue, "Queue");
+}
+
+/** Fetch all tracks from artist and auto-create a playlist */
+export async function createArtistPlaylist(artistId: string, artistName: string) {
+  try {
+    showToast(`Loading ${artistName}'s tracks...`);
+    const { fetchArtistContent } = await import("../lib/api");
+    
+    const content = await fetchArtistContent(artistId);
+    if (!content || !content.tracks) {
+      showToast("Could not fetch artist content");
+      return;
+    }
+    
+    // Use tracks directly from artist content, with smart deduplication
+    const allTracks = content.tracks || [];
+    const trackMap = new Map<string, any[]>();
+    
+    // Group tracks by ID to handle duplicates across albums/singles
+    allTracks.forEach((t: any) => {
+      const key = t.id;
+      if (!trackMap.has(key)) {
+        trackMap.set(key, []);
+      }
+      trackMap.get(key)!.push(t);
+    });
+    
+    // Deduplicate by ID: prefer album versions, keep re-recordings
+    const idDeduped: any[] = [];
+    trackMap.forEach((versions) => {
+      if (versions.length === 1) {
+        idDeduped.push(versions[0]);
+        return;
+      }
+      
+      // Sort versions: albums first, then by metadata richness
+      const sorted = versions.sort((a, b) => {
+        const aIsAlbum = a.album?.type !== "SINGLE" && a.album?.type !== "EP";
+        const bIsAlbum = b.album?.type !== "SINGLE" && b.album?.type !== "EP";
+        
+        if (aIsAlbum !== bIsAlbum) {
+          return aIsAlbum ? -1 : 1; // Albums first
+        }
+        
+        // If same type, prefer version with more metadata
+        const aTags = a.album?.mediaMetadata?.tags?.length || 0;
+        const bTags = b.album?.mediaMetadata?.tags?.length || 0;
+        return bTags - aTags;
+      });
+      
+      // Keep the best version plus any re-recordings
+      idDeduped.push(sorted[0]);
+      for (let i = 1; i < sorted.length; i++) {
+        const title = sorted[i].title || "";
+        if (title.toLowerCase().includes("rerecord") || title.toLowerCase().includes("re-record") || 
+            title.toLowerCase().includes("remaster") || title.toLowerCase().includes("re-master")) {
+          idDeduped.push(sorted[i]);
+        }
+      }
+    });
+    
+    // Deduplicate by exact title: keep only one per title unless it's an alternate version
+    const titleMap = new Map<string, any[]>();
+    idDeduped.forEach((t: any) => {
+      const title = t.title || "";
+      const key = title.toLowerCase();
+      if (!titleMap.has(key)) {
+        titleMap.set(key, []);
+      }
+      titleMap.get(key)!.push(t);
+    });
+    
+    const deduped: any[] = [];
+    titleMap.forEach((versions) => {
+      if (versions.length === 1) {
+        deduped.push(versions[0]);
+        return;
+      }
+      
+      // Sort: prefer versions without alternate markers, then keep alternates
+      const mainVersion = versions.find((v) => {
+        const title = v.title || "";
+        return !title.match(/\(.*?mix.*?\)|\(.*?alternate.*?\)|\(.*?version.*?\)|\(.*?edit.*?\)/i);
+      }) || versions[0];
+      
+      deduped.push(mainVersion);
+      
+      // Keep alternate mixes/versions
+      for (const v of versions) {
+        if (v !== mainVersion) {
+          const title = v.title || "";
+          if (title.match(/\(.*?mix.*?\)|\(.*?alternate.*?\)|\(.*?version.*?\)|\(.*?edit.*?\)/i)) {
+            deduped.push(v);
+          }
+        }
+      }
+    });
+    
+    if (deduped.length === 0) {
+      showToast("No tracks found for this artist");
+      return;
+    }
+    
+    // Ensure each track has artist info and sort by release date
+    const tracksWithArtist = deduped.map((t: any) => ({
+      ...t,
+      artist: { name: artistName },
+      artists: t.artists || [{ name: artistName }],
+    }));
+    
+    const sorted = tracksWithArtist.sort((a: any, b: any) => {
+      const dateA = new Date(a.album?.releaseDate || "1970-01-01").getTime();
+      const dateB = new Date(b.album?.releaseDate || "1970-01-01").getTime();
+      return dateA - dateB; // Oldest first
+    });
+    
+    // Auto-create playlist
+    const plId = await createPlaylist(undefined, `${artistName}`);
+    const duration = sorted.reduce((sum: number, t: any) => sum + (t.duration || 0), 0);
+    const pl = {
+      id: plId,
+      title: artistName,
+      tracks: sorted,
+      numberOfTracks: sorted.length,
+      duration,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    const { savePlaylist } = await import("../lib/localStorage");
+    await savePlaylist(plId, pl);
+    await loadPlaylists();
+    showToast(`Created "${artistName}" playlist with ${sorted.length} tracks`);
+  } catch (error) {
+    console.error("Error creating artist playlist:", error);
+    showToast("Error creating playlist");
+  }
 }
 
 /** Initialize playlist sidebar and modal close button */
