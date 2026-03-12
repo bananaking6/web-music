@@ -1,0 +1,7 @@
+[install]
+# Use the lockfile for reproducible installs
+frozenLockfile = false
+
+[run]
+# Prefer bun's runtime for scripts
+bun = true

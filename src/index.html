@@ -12,63 +12,69 @@
             content="black-translucent"
         />
         <title>𝚺 Music</title>
-        <link rel="stylesheet" href="style.css" />
-        <link rel="icon" href="icon.svg" />
+        <link rel="stylesheet" href="./styles/style.css" />
+        <link rel="icon" href="/icon.svg" />
     </head>
     <body>
         <canvas id="visualizer"></canvas>
         <div id="bg"></div>
+        <div class="time-tooltip" id="timeTooltip">0:00</div>
         <div id="app">
-            <aside class="sidebar" id="sidebar">
-                <section id="side-main">
-                    <h1>𝚺 Music</h1>
-                    <button onclick="showView('home')">Home</button>
-                    <button onclick="showView('search')">Search</button>
-                    <button
-                        onclick="
-                            openAlbum({
-                                title: 'Queue',
-                                type: 'PLAYLIST',
-                                cover: '',
-                                releaseDate: `${new Date().getFullYear()}-${new Date().getMonth() + 1}-${new Date().getDate() - 1}`,
-                                artists: [{ name: 'Various Artists' }],
-                                playlistTracks: queue,
-                                duration: queue.reduce(
-                                    (sum, track) => sum + track.duration,
-                                    0,
-                                ),
-                                numberOfTracks: queue.length,
-                                id: 'queue',
-                            })
-                        "
-                    >
-                        Queue
+            <nav id="topNav" class="top-nav">
+                <div onclick="showView('home')" class="nav-brand">𝚺 Music</div>
+                <div class="nav-links">
+                    <button id="navHome" onclick="showView('home')" title="Home">
+                        Home
                     </button>
-                    <br />
-                </section>
-                <section id="side-playlists">
-                    <h1>Playlists</h1>
-                    <section id="playlists"></section>
-                    <button onclick="createPlaylist()">+ New Playlist</button>
-                </section>
-                <section id="side-pinned">
-                    <h1>Pinned</h1>
-                    <section id="pinned"></section>
-                </section>
-            </aside>
-            <nav id="mobileNav" class="mobile-nav hidden">
-                <button id="navHome" onclick="showView('home')" title="Home">
-                    Home
-                </button>
-                <button
-                    id="navSearch"
-                    onclick="showView('search')"
-                    title="Search"
-                >
-                    Search
-                </button>
+                    <button
+                        id="navSearch"
+                        onclick="showView('search')"
+                        title="Search"
+                    >
+                        Search
+                    </button>
+                    <button
+                        id="navLibrary"
+                        onclick="showView('library')"
+                        title="Library"
+                    >
+                        Library
+                    </button>
+                </div>
             </nav>
             <main>
+                <section id="library" class="view hidden">
+                    <div class="library-container">
+                        <section id="side-left" class="library-left-section">
+                            <section id="side-playlists" class="library-section">
+                                <h1>Playlists</h1>
+                                <section id="playlists"></section>
+                                <button onclick="createPlaylist()" class="library-btn">+ New Playlist</button>
+                            </section>
+                            <section id="side-artists" class="library-section">
+                                <h1>Pinned Artists</h1>
+                                <section id="artists"></section>
+                            </section>
+                            <section id="side-albums" class="library-section">
+                                <h1>Pinned Albums</h1>
+                                <section id="albums"></section>
+                            </section>
+                        </section>
+                        <section id="side-right" class="library-right-section">
+                            <section id="side-history" class="library-section">
+                                <h1>
+                                    History
+                                    <button id="clearHistoryBtn" style="float: right; font-size: 0.8rem; padding: 2px 8px; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: var(--color-text-muted); cursor: pointer; border-radius: 4px;" onclick="clearHistory()">Clear</button>
+                                </h1>
+                                <section id="history"></section>
+                            </section>
+                            <section id="side-queue" class="library-section">
+                                <h1>Queue</h1>
+                                <section id="libraryQueue"></section>
+                            </section>
+                        </section>
+                    </div>
+                </section>
                 <section id="home" class="view">
                     <div class="home-hero">
                         <h2 class="home-title">Welcome to 𝚺 Music</h2>
@@ -109,7 +115,6 @@
                     <div class="seek-bar" id="seekBar">
                         <div class="buffer-bar" id="bufferBar"></div>
                         <div class="progress-bar" id="progressBar"></div>
-                        <div class="time-tooltip" id="timeTooltip">0:00</div>
                     </div>
                 </div>
 
@@ -117,7 +122,7 @@
                     <img id="playerCover" alt=" " />
                     <div id="playerTitle">
                         <span id="playerTitleSpan"></span
-                        ><img id="playerExplicit" src="e.svg" />
+                        ><img id="playerExplicit" src="/e.svg" />
                     </div>
                     <div id="playerArtist"></div>
                 </div>
@@ -289,7 +294,6 @@
         <div
             id="playlistModal"
             class="hidden"
-            onclick="if (event.target === this) closePlaylistModal();"
         >
             <div class="modal-content">
                 <h3>Save to Playlist</h3>
@@ -314,27 +318,6 @@
             </div>
         </div>
         <audio id="audio" crossorigin="anonymous"></audio>
-        <script src="script.js"></script>
-        <script>
-            function updatePlayIcon() {
-                const audio = document.getElementById("audio");
-                const btn = document.querySelector(
-                    ".player-controls button:nth-child(3)",
-                );
-                if (!btn) return;
-                if (audio.paused) {
-                    btn.innerHTML =
-                        '<svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
-                } else {
-                    btn.innerHTML =
-                        '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>';
-                }
-            }
-            const audioEl = document.getElementById("audio");
-            if (audioEl) {
-                audioEl.addEventListener("play", updatePlayIcon);
-                audioEl.addEventListener("pause", updatePlayIcon);
-            }
-        </script>
+        <script type="module" src="./main.ts"></script>
     </body>
 </html>
