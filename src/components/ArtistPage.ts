@@ -3,9 +3,14 @@ import { IMG } from "../utils/constants";
 import { addToQueue } from "../lib/audioPlayer";
 import { openAddToPlaylistModal, loadPlaylists } from "../components/Playlists";
 import { createCard } from "../components/Search";
-import { showView } from "../components/Navigation";
+import { showView, addToViewHistory } from "../components/Navigation";
 import { togglePinnedArtist } from "../lib/localStorage";
-import { showToast } from "../utils/helpers";
+import { showToast, showLoadingSpinner } from "../utils/helpers";
+
+/** Show loading placeholder for artist page */
+function showLoadingPlaceholder() {
+  showLoadingSpinner("artist");
+}
 
 function deduplicateAlbums(albums: any[]): any[] {
   const unique = new Map<string, any>();
@@ -40,14 +45,21 @@ export async function openArtist(id: string, name: string, pic: string) {
 export async function openArtistById(id: string, pushHistory = true) {
   const { showView: sv } = await import("../components/Navigation");
   sv("artist", pushHistory, { id });
+  showLoadingPlaceholder();
   
-  // Try to fetch artist info from cache or API
-  const artist = await fetchArtist(id);
-  if (artist) {
-    await renderArtistContent(id, artist.name, artist.picture);
-  } else {
-    // Fallback with minimal info
-    await renderArtistContent(id, "Artist", "");
+  try {
+    const json = await fetchArtist(id);
+    // Unwrap nested response (same logic as renderArtistContent uses internally)
+    const data = json?.data || json;
+    const artist = data?.artist || (Array.isArray(data) ? data[0] : data);
+    if (artist) {
+      await renderArtistContent(id, artist.name || "Artist", artist.picture || "");
+    } else {
+      await renderArtistContent(id, "Artist", "");
+    }
+  } catch (error) {
+    showToast("Error loading artist");
+    console.error(error);
   }
 }
 
@@ -64,6 +76,9 @@ async function renderArtistContent(id: string, name: string, pic: string) {
     </div>
     <div id="artistContent"></div>
   `;
+  
+  // Add to view history with full picture URL (matching AlbumPage pattern)
+  addToViewHistory(id, name, "artist", coverUrl(pic));
 
   // Toggle pin on artist name click
   el.querySelector("h2")!.addEventListener("click", () => {
@@ -72,6 +87,9 @@ async function renderArtistContent(id: string, name: string, pic: string) {
   });
 
   const content = document.getElementById("artistContent")!;
+  
+  // Show loading spinner while fetching
+  showLoadingSpinner("artistContent");
 
   const [primaryJson, contentJson] = await Promise.all([
     fetchArtist(id),
@@ -111,6 +129,8 @@ async function renderArtistContent(id: string, name: string, pic: string) {
   const tracks = Array.from(trackMap.values())
     .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
     .slice(0, 15);
+
+  content.innerHTML = ""; // Clear loading placeholder
 
   if (tracks.length) {
     const row = document.createElement("div");

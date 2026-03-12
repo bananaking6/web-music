@@ -144,6 +144,63 @@ export async function togglePinnedArtist(
   }
 }
 
+// ─── HISTORY ──────────────────────────────────────────────────────────────
+
+/** Add item to history (no duplicates, max 50 items, sorted by most recent) */
+export async function addToHistory(
+  id: string,
+  title: string,
+  viewType: "album" | "artist",
+  icon?: string,
+): Promise<void> {
+  const historyId = `history-${viewType}-${id}`;
+  const existing = await getItemById<PinnedItem>(STORES.PINNED, historyId);
+
+  // Remove if exists (to move to top as most recent)
+  if (existing) {
+    await deleteItem(STORES.PINNED, historyId);
+  }
+
+  // Add as most recent
+  await saveItem<PinnedItem>(STORES.PINNED, {
+    id: historyId,
+    type: "history",
+    title,
+    data: { id, view: viewType, icon },
+    updatedAt: Date.now(),
+  });
+
+  // Enforce max 50 items - get all history and delete oldest if needed
+  const allItems = await getAllItems<PinnedItem>(STORES.PINNED);
+  const historyItems = allItems
+    .filter(item => item.type === "history")
+    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+  if (historyItems.length > 50) {
+    const toDelete = historyItems.slice(50);
+    for (const item of toDelete) {
+      await deleteItem(STORES.PINNED, item.id);
+    }
+  }
+}
+
+/** Get all history items sorted by most recent first */
+export async function getHistory(): Promise<PinnedItem[]> {
+  const allItems = await getAllItems<PinnedItem>(STORES.PINNED);
+  return allItems
+    .filter(item => item.type === "history")
+    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+}
+
+/** Clear all history */
+export async function clearHistoryItems(): Promise<void> {
+  const allItems = await getAllItems<PinnedItem>(STORES.PINNED);
+  const historyItems = allItems.filter(item => item.type === "history");
+  for (const item of historyItems) {
+    await deleteItem(STORES.PINNED, item.id);
+  }
+}
+
 // ─── SAVED ALBUMS (LIBRARY) ──────────────────────────────────────────────
 
 /** Get all saved albums */

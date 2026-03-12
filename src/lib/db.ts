@@ -20,9 +20,9 @@ export interface PlaylistItem {
 
 export interface PinnedItem {
   id: string;
-  type: "album" | "artist";
+  type: "album" | "artist" | "history";
   title: string;
-  data: any; // album object or [id, name, pic] for artist
+  data: any; // album object or [id, name, pic] for artist or {id, view, icon} for history
   createdAt?: number;
   updatedAt?: number;
 }

@@ -1,23 +1,40 @@
 import { fetchAlbum } from "../lib/api";
 import { coverUrl } from "../lib/api";
-import { formatTime, formatDate } from "../utils/helpers";
+import { formatTime, formatDate, showLoadingSpinner } from "../utils/helpers";
 import { addToQueue, playTracks, downloadAlbum } from "../lib/audioPlayer";
 import {
   openAddToPlaylistModal,
   openAddAlbumToPlaylistModal,
   loadPlaylists,
 } from "../components/Playlists";
-import { showView } from "../components/Navigation";
+import { showView, addToViewHistory } from "../components/Navigation";
 import { togglePinnedAlbum, deletePlaylist, getPlaylist } from "../lib/localStorage";
 import { showToast } from "../utils/helpers";
 
+/** Show loading placeholder */
+function showLoadingPlaceholder() {
+  showLoadingSpinner("album");
+}
+
 /** Render a single track row for the album/playlist track list */
-export function renderTrackRow(track: any): HTMLElement {
+export function renderTrackRow(track: any, options?: { number?: number; isPlaylist?: boolean }): HTMLElement {
   const d = document.createElement("div");
   d.className = "song-row";
+  
+  const numberPart = options?.number !== undefined ? `<span style="min-width: 30px; text-align: right; color: var(--color-text-muted);">${options.number}</span>` : "";
+  const albumIconPart = options?.isPlaylist ? `<img src="${coverUrl(track.album?.cover)}" alt="album" style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover;">` : "";
+  const artistPart = options?.isPlaylist && track.artist ? `<span style="color: var(--color-text-muted); font-size: 0.9rem;">${track.artist.name || "Unknown"}</span>` : "";
+  
   d.innerHTML = `
-    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${track.title}</span>
-    ${track.explicit ? '<img src="e.svg">' : ""}
+    ${numberPart}
+    ${albumIconPart}
+    <div style="flex: 1; overflow: hidden;">
+      <div style="display: flex; align-items: center; gap: 4px; overflow: hidden;">
+        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${track.title}</span>
+        ${track.explicit ? '<img src="e.svg" style="flex-shrink: 0;">' : ""}
+      </div>
+      ${artistPart}
+    </div>
     <span class="right">${track.key ? `${track.key} ` : ""}${track.bpm ? `${track.bpm} BPM ` : ""}${formatTime(track.duration)}</span>
   `;
   d.onclick = () => addToQueue(track);
@@ -40,20 +57,28 @@ export async function openAlbum(al: any) {
 export async function openAlbumById(id: string, pushHistory = true) {
   const { showView: sv } = await import("../components/Navigation");
   sv("album", pushHistory, { id });
+  showLoadingPlaceholder();
   
-  const pl = await getPlaylist(id);
-  if (pl) {
-    const al = { ...pl, type: "PLAYLIST" } as any;
-    await renderAlbumContent(al);
-  } else {
-    // Try fetching as regular album
-    const data = await fetchAlbum(id);
-    if (data) {
-      data.id = id;
-      data.type = "ALBUM";
-      data.artists = data.artists || [{ name: "Unknown Artist" }];
-      await renderAlbumContent(data);
+  try {
+    const pl = await getPlaylist(id);
+    if (pl) {
+      const al = { ...pl, type: "PLAYLIST" } as any;
+      await renderAlbumContent(al);
+    } else {
+      // Try fetching as regular album
+      const data = await fetchAlbum(id);
+      if (data) {
+        data.id = id;
+        data.type = "ALBUM";
+        data.artists = data.artists || [{ name: "Unknown Artist" }];
+        await renderAlbumContent(data);
+      } else {
+        showToast("Failed to load album after multiple retries");
+      }
     }
+  } catch (error) {
+    showToast("Error loading album");
+    console.error(error);
   }
 }
 
@@ -80,6 +105,9 @@ async function renderAlbumContent(al: any) {
     </div>
     <div id="albumTracks"></div>
   `;
+  
+  // Add to view history with cover icon
+  addToViewHistory(al.id, al.title, "album", coverUrl(al.cover));
 
   // Artist link (if artist info available)
   if (al.artists[0].id && al.artists[0].name && al.artists[0].picture) {
@@ -157,8 +185,16 @@ async function renderAlbumContent(al: any) {
     el.querySelector("#albumCover")!.replaceWith(grid);
   } else {
     // Regular album: fetch tracks from API
+    const tracksContainer = el.querySelector("#albumTracks")!;
+    tracksContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100px;"><div style="font-size: 2rem; animation: spin 2s linear infinite;">Σ</div></div>';
+    
     const data = await fetchAlbum(al.id);
-    tracks = (data?.items || []).map((t: any) => t.item);
+    if (data) {
+      tracks = (data?.items || []).map((t: any) => t.item);
+    } else {
+      showToast("Failed to load album tracks");
+      tracksContainer.innerHTML = '<div style="color: var(--color-text-muted); padding: 20px;">Failed to load tracks</div>';
+    }
 
     const extraBtn = el.querySelector("#extraAction") as HTMLButtonElement;
     extraBtn.textContent = "Pin Album";
@@ -170,7 +206,13 @@ async function renderAlbumContent(al: any) {
   }
 
   const tracksContainer = el.querySelector("#albumTracks")!;
-  tracks.forEach((track) => tracksContainer.appendChild(renderTrackRow(track)));
+  tracksContainer.innerHTML = "";
+  tracks.forEach((track, index) => {
+    const options = isPlaylist 
+      ? { isPlaylist: true }
+      : { number: index + 1 };
+    tracksContainer.appendChild(renderTrackRow(track, options));
+  });
 
   el.querySelector("#playAll")!.addEventListener("click", () => playTracks(tracks, false));
   el.querySelector("#shufflePlay")!.addEventListener("click", () => playTracks(tracks, true));

@@ -57,6 +57,78 @@ export async function openPlaylist(id: string) {
   );
 }
 
+/** Load and display pinned artists */
+async function loadPinnedArtists() {
+  const artistsBar = document.getElementById("artists");
+  if (!artistsBar) return;
+  
+  artistsBar.innerHTML = "";
+  const pinnedItems = await getPinned();
+  const artists = pinnedItems.filter((item: any) => item.type === "artist");
+  
+  if (artists.length === 0) {
+    artistsBar.innerHTML = '<div style="color: var(--color-text-muted); padding: var(--space-md); font-size: 0.9rem;">No pinned artists</div>';
+    return;
+  }
+  
+  artists.forEach((pinnedItem: any) => {
+    const ar = pinnedItem.data;
+    const pDiv = document.createElement("div");
+    pDiv.className = "card";
+    
+    const img = document.createElement("img");
+    img.src = coverUrl(ar[2]);
+    img.style.cssText = "width: 100%; height: 100%; object-fit: cover;";
+    pDiv.appendChild(img);
+    pDiv.onclick = () =>
+      import("../components/ArtistPage").then(({ openArtist }) =>
+        openArtist(ar[0], ar[1], ar[2])
+      );
+    pDiv.addEventListener("mouseenter", (e) => 
+      showCardTooltip(pDiv, ar[1], e as MouseEvent)
+    );
+    pDiv.addEventListener("mousemove", updateTooltipPosition);
+    pDiv.addEventListener("mouseleave", hideCardTooltip);
+    
+    artistsBar.appendChild(pDiv);
+  });
+}
+
+/** Load and display pinned albums */
+async function loadPinnedAlbums() {
+  const albumsBar = document.getElementById("albums");
+  if (!albumsBar) return;
+  
+  albumsBar.innerHTML = "";
+  const pinnedItems = await getPinned();
+  const albums = pinnedItems.filter((item: any) => item.type === "album");
+  
+  if (albums.length === 0) {
+    albumsBar.innerHTML = '<div style="color: var(--color-text-muted); padding: var(--space-md); font-size: 0.9rem;">No pinned albums</div>';
+    return;
+  }
+  
+  albums.forEach((pinnedItem: any) => {
+    const al = pinnedItem.data;
+    const pDiv = document.createElement("div");
+    pDiv.className = "card";
+    
+    const img = document.createElement("img");
+    img.src = coverUrl(al.cover);
+    img.style.cssText = "width: 100%; height: 100%; object-fit: cover;";
+    pDiv.appendChild(img);
+    pDiv.onclick = () =>
+      import("../components/AlbumPage").then(({ openAlbum }) => openAlbum(al));
+    pDiv.addEventListener("mouseenter", (e) => 
+      showCardTooltip(pDiv, al.title, e as MouseEvent)
+    );
+    pDiv.addEventListener("mousemove", updateTooltipPosition);
+    pDiv.addEventListener("mouseleave", hideCardTooltip);
+    
+    albumsBar.appendChild(pDiv);
+  });
+}
+
 /** Render sidebar playlists and pinned items */
 export async function loadPlaylists() {
   const playlistsBar = document.getElementById("playlists")!;
@@ -104,46 +176,15 @@ export async function loadPlaylists() {
     playlistsBar.appendChild(plDiv);
   }
 
-  // Pinned items
-  const pinnedBar = document.getElementById("pinned")!;
-  pinnedBar.innerHTML = "";
-  const pinnedItems = await getPinned();
-  pinnedItems.forEach((pinnedItem: any) => {
-    const pDiv = document.createElement("div");
-    pDiv.className = "card";
+  // Load and display pinned artists and albums
+  await loadPinnedArtists();
+  await loadPinnedAlbums();
 
-    if (pinnedItem.type === "album") {
-      const al = pinnedItem.data;
-      const img = document.createElement("img");
-      img.src = coverUrl(al.cover);
-      img.style.cssText = "width: 100%; height: 100%; object-fit: cover;";
-      pDiv.appendChild(img);
-      pDiv.onclick = () =>
-        import("../components/AlbumPage").then(({ openAlbum }) => openAlbum(al));
-      pDiv.addEventListener("mouseenter", (e) => 
-        showCardTooltip(pDiv, al.title, e as MouseEvent)
-      );
-      pDiv.addEventListener("mousemove", updateTooltipPosition);
-      pDiv.addEventListener("mouseleave", hideCardTooltip);
-    } else if (pinnedItem.type === "artist") {
-      const ar = pinnedItem.data;
-      const img = document.createElement("img");
-      img.src = coverUrl(ar[2]);
-      img.style.cssText = "width: 100%; height: 100%; object-fit: cover;";
-      pDiv.appendChild(img);
-      pDiv.onclick = () =>
-        import("../components/ArtistPage").then(({ openArtist }) =>
-          openArtist(ar[0], ar[1], ar[2]),
-        );
-      pDiv.addEventListener("mouseenter", (e) => 
-        showCardTooltip(pDiv, ar[1], e as MouseEvent)
-      );
-      pDiv.addEventListener("mousemove", updateTooltipPosition);
-      pDiv.addEventListener("mouseleave", hideCardTooltip);
-    }
+  // Load and display history
+  await loadHistory();
 
-    pinnedBar.appendChild(pDiv);
-  });
+  // Load and display queue
+  loadLibraryQueue();
 }
 
 /** Build the playlist checkbox list inside the modal */
@@ -355,6 +396,123 @@ export function setupTrackContextMenu(el: HTMLElement, track: any) {
     e.preventDefault();
     showTrackContextMenu(e.pageX, e.pageY, track);
   });
+}
+
+/** Load and display history of recently viewed albums and artists */
+export async function loadHistory() {
+  const { getHistory } = await import("../lib/localStorage");
+  const history = await getHistory();
+  
+  const historyBar = document.getElementById("history");
+  if (!historyBar) return;
+  
+  historyBar.innerHTML = "";
+  
+  if (history.length === 0) {
+    historyBar.innerHTML = '<div style="color: var(--color-text-muted); padding: var(--space-md);">No recent items</div>';
+    return;
+  }
+  
+  history.forEach((item) => {
+    const data = item.data;
+    const card = document.createElement("div");
+    card.className = "card";
+    card.title = item.title;
+    
+    // Create card with icon and title
+    const titleDiv = document.createElement("div");
+    titleDiv.style.cssText = "padding: var(--space-md); background: var(--color-bg-elevated); border-radius: var(--radius-md); text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 150px; gap: var(--space-sm);";
+    
+    // Add icon if available
+    if (data.icon) {
+      const img = document.createElement("img");
+      // Icon is stored as full URL (from coverUrl for artists, or already a URL for albums)
+      img.src = data.icon;
+      img.style.cssText = "width: 80px; height: 80px; border-radius: var(--radius-md); object-fit: cover;";
+      titleDiv.appendChild(img);
+    }
+    
+    // Add title
+    const textSpan = document.createElement("span");
+    textSpan.textContent = item.title;
+    textSpan.style.cssText = "font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;";
+    titleDiv.appendChild(textSpan);
+    
+    card.appendChild(titleDiv);
+    card.onclick = () => {
+      if (data.view === "album") {
+        import("../components/AlbumPage").then(({ openAlbumById }) =>
+          openAlbumById(data.id, true)
+        );
+      } else if (data.view === "artist") {
+        import("../components/ArtistPage").then(({ openArtistById }) =>
+          openArtistById(data.id, true)
+        );
+      }
+    };
+    
+    card.addEventListener("mouseenter", (e) => 
+      showCardTooltip(card, item.title, e as MouseEvent)
+    );
+    card.addEventListener("mousemove", updateTooltipPosition);
+    card.addEventListener("mouseleave", hideCardTooltip);
+    
+    historyBar.appendChild(card);
+  });
+}
+
+/** Render the current queue in the library view */
+export function loadLibraryQueue() {
+  const el = document.getElementById("libraryQueue");
+  if (!el) return;
+  el.innerHTML = "";
+
+  if (queue.length === 0) {
+    el.innerHTML = '<div style="color: var(--color-text-muted); padding: var(--space-md);">Queue is empty</div>';
+    return;
+  }
+
+  queue.forEach((t, i) => {
+    const row = document.createElement("div");
+    row.style.cssText = "display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-sm); cursor: pointer;" + (i === index ? " background: var(--color-bg-elevated);" : "");
+    row.onmouseenter = () => row.style.background = "var(--color-bg-elevated)";
+    row.onmouseleave = () => { if (i !== index) row.style.background = ""; };
+
+    const img = document.createElement("img");
+    img.src = coverUrl(t.album?.cover);
+    img.style.cssText = "width: 36px; height: 36px; border-radius: var(--radius-sm); object-fit: cover; flex-shrink: 0;";
+    row.appendChild(img);
+
+    const info = document.createElement("div");
+    info.style.cssText = "flex: 1; min-width: 0; overflow: hidden;";
+    const title = document.createElement("div");
+    title.textContent = (i === index ? "▶ " : "") + (t.title || "Unknown");
+    title.style.cssText = "font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" + (i === index ? " color: var(--color-accent);" : "");
+    info.appendChild(title);
+
+    const artist = document.createElement("div");
+    artist.textContent = t.artists?.map((a: any) => a.name).join(", ") || "";
+    artist.style.cssText = "font-size: 0.75rem; color: var(--color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;";
+    info.appendChild(artist);
+    row.appendChild(info);
+
+    row.onclick = () => {
+      import("../lib/audioPlayer").then(({ loadTrack, setIndex }) => {
+        setIndex(i);
+        loadTrack(t);
+      });
+    };
+
+    el.appendChild(row);
+  });
+}
+
+/** Clear all history from localStorage */
+export async function clearHistory() {
+  const { clearHistoryItems } = await import("../lib/localStorage");
+  await clearHistoryItems();
+  await loadHistory();
+  showToast("History cleared");
 }
 
 /** Create a new playlist from within the modal */

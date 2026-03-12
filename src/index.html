@@ -45,14 +45,33 @@
             <main>
                 <section id="library" class="view hidden">
                     <div class="library-container">
-                        <section id="side-playlists" class="library-section">
-                            <h1>Playlists</h1>
-                            <section id="playlists"></section>
-                            <button onclick="createPlaylist()" class="library-btn">+ New Playlist</button>
+                        <section id="side-left" class="library-left-section">
+                            <section id="side-playlists" class="library-section">
+                                <h1>Playlists</h1>
+                                <section id="playlists"></section>
+                                <button onclick="createPlaylist()" class="library-btn">+ New Playlist</button>
+                            </section>
+                            <section id="side-artists" class="library-section">
+                                <h1>Pinned Artists</h1>
+                                <section id="artists"></section>
+                            </section>
+                            <section id="side-albums" class="library-section">
+                                <h1>Pinned Albums</h1>
+                                <section id="albums"></section>
+                            </section>
                         </section>
-                        <section id="side-pinned" class="library-section">
-                            <h1>Pinned</h1>
-                            <section id="pinned"></section>
+                        <section id="side-right" class="library-right-section">
+                            <section id="side-history" class="library-section">
+                                <h1>
+                                    History
+                                    <button id="clearHistoryBtn" style="float: right; font-size: 0.8rem; padding: 2px 8px; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: var(--color-text-muted); cursor: pointer; border-radius: 4px;" onclick="clearHistory()">Clear</button>
+                                </h1>
+                                <section id="history"></section>
+                            </section>
+                            <section id="side-queue" class="library-section">
+                                <h1>Queue</h1>
+                                <section id="libraryQueue"></section>
+                            </section>
                         </section>
                     </div>
                 </section>

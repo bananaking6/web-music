@@ -1,6 +1,36 @@
 let currentView = "home";
 let currentState: any = { view: "home" };
 
+/** Add item to view history (stored in localStorage) */
+export async function addToViewHistory(id: string, title: string, view: string, icon?: string) {
+  // Don't track main views (home, search, library)
+  if (["home", "search", "library"].includes(view)) return;
+  
+  // Store in localStorage
+  const { addToHistory } = await import("../lib/localStorage");
+  await addToHistory(id, title, view as "album" | "artist", icon);
+  
+  // Also update the library view if it's visible
+  const historyEl = document.getElementById("history");
+  if (historyEl) {
+    const { loadHistory } = await import("../components/Playlists");
+    await loadHistory();
+  }
+}
+
+/** Navigate to a history item */
+export function navigateToHistoryItem(id: string, view: string) {
+  if (view === "album") {
+    import("../components/AlbumPage").then(({ openAlbumById }) =>
+      openAlbumById(id, true),
+    );
+  } else if (view === "artist") {
+    import("../components/ArtistPage").then(({ openArtistById }) =>
+      openArtistById(id, true),
+    );
+  }
+}
+
 /** Show a view by id with smooth fade transition */
 export function showView(id: string, pushHistory = true, state?: any) {
   // Fade out current view
@@ -79,13 +109,19 @@ export function initNavigation() {
       if (id) {
         currentState = { view, id };
         if (view === "album") {
-          import("../components/AlbumPage").then(({ openAlbumById }) =>
-            openAlbumById(id, false),
-          );
+          import("../components/AlbumPage").then(({ openAlbumById }) => {
+            openAlbumById(id, false).catch(err => {
+              console.error("Failed to load album:", err);
+              showView("home", false);
+            });
+          });
         } else if (view === "artist") {
-          import("../components/ArtistPage").then(({ openArtistById }) =>
-            openArtistById(id, false),
-          );
+          import("../components/ArtistPage").then(({ openArtistById }) => {
+            openArtistById(id, false).catch(err => {
+              console.error("Failed to load artist:", err);
+              showView("home", false);
+            });
+          });
         }
       } else {
         showView(view, false);
@@ -93,3 +129,4 @@ export function initNavigation() {
     }
   }
 }
+

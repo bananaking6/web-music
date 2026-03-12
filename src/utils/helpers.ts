@@ -56,3 +56,14 @@ export function formatDate(dateStr: string): string {
     return "";
   }
 }
+
+/** Show a loading spinner with spinning sigma */
+export function showLoadingSpinner(elementId: string = "album"): void {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  el.innerHTML = `
+    <div style="display: flex; align-items: center; justify-content: center; min-height: 400px;">
+      <div style="font-size: 4rem; animation: spin 2s linear infinite;">Σ</div>
+    </div>
+  `;
+}

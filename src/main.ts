@@ -5,7 +5,7 @@
  * State is managed by audioPlayer.ts (queue, index, preloadedAudio).
  */
 
-import { initNavigation, showView } from "./components/Navigation";
+import { initNavigation, showView, addToViewHistory } from "./components/Navigation";
 import { initSearch } from "./components/Search";
 import { initPlayer } from "./components/Player";
 import { initLyrics, toggleLyrics } from "./components/LyricsView";
@@ -15,6 +15,7 @@ import {
   closePlaylistModal,
   createNewPlaylistFromModal,
   openAddToPlaylistModal,
+  clearHistory,
 } from "./components/Playlists";
 import {
   togglePlay,
@@ -46,6 +47,7 @@ window.closePlaylistModal = closePlaylistModal;
 window.createNewPlaylistFromModal = createNewPlaylistFromModal;
 window.createPlaylist = createPlaylist;
 window.openPlaylist = openPlaylist;
+window.clearHistory = clearHistory;
 
 // queue is mutated in-place so window.queue always reflects the current state
 window.queue = queue;
