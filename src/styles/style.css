@@ -539,6 +539,7 @@ main {
     height: 16px;
     flex-shrink: 0;
     opacity: 0.6;
+    margin-left: 5px;
 }
 
 /* Artist Page */
@@ -1215,7 +1216,7 @@ input[type="range"]::-webkit-slider-runnable-track {
     background-size: cover;
     background-position: center;
     filter: blur(25px);
-    opacity: 0.2;
+    opacity: 0.05;
     z-index: -2;
     transition: background-image 1s ease;
 }
