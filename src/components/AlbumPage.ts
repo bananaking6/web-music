@@ -1,4 +1,4 @@
-import { fetchAlbum } from "../lib/api";
+import { fetchAlbum, fetchSimilarAlbums } from "../lib/api";
 import { coverUrl } from "../lib/api";
 import { formatTime, formatDate, showLoadingSpinner } from "../utils/helpers";
 import { addToQueue, playTracks, downloadAlbum } from "../lib/audioPlayer";
@@ -237,4 +237,77 @@ async function renderAlbumContent(al: any) {
   el.querySelector("#downloadAlbum")!.addEventListener("click", () =>
     downloadAlbum(al, tracks),
   );
+
+  // Load and display similar albums (only for non-playlist albums)
+  if (!isPlaylist && al.id) {
+    loadSimilarAlbums(al.id);
+  }
+}
+
+/** Parse ISO 8601 duration string to milliseconds */
+function parseDuration(durationStr: string | number | undefined): number {
+  if (typeof durationStr === "number") return durationStr;
+  if (!durationStr) return 0;
+  // Parse ISO 8601 duration like "PT1H10M49S"
+  const match = durationStr.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?/);
+  if (!match) return 0;
+  const hours = parseInt(match[1] || "0", 10);
+  const minutes = parseInt(match[2] || "0", 10);
+  const seconds = parseFloat(match[3] || "0");
+  return (hours * 3600 + minutes * 60 + seconds) * 1000;
+}
+
+/** Normalize similar album data to match expected structure */
+function normalizeSimilarAlbum(al: any): any {
+  return {
+    ...al,
+    numberOfTracks: al.numberOfTracks || al.numberOfItems || 0,
+    duration: parseDuration(al.duration) || 0,
+    copyright: typeof al.copyright === "string" ? al.copyright : (al.copyright?.text || ""),
+  };
+}
+
+/** Load and display similar albums */
+async function loadSimilarAlbums(albumId: string) {
+  const el = document.getElementById("album")!;
+  try {
+    const similar = await fetchSimilarAlbums(albumId);
+    if (!similar || similar.length === 0) return;
+
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = "<h3>Similar Albums</h3>";
+
+    const container = document.createElement("div");
+    container.className = "cards";
+
+    for (const al of similar.slice(0, 12)) {
+      const card = document.createElement("div");
+      card.style.cursor = "pointer";
+      const img = coverUrl(al.cover);
+      card.innerHTML = `
+        <div style="position: relative; width: 100%; aspect-ratio: 1; border-radius: var(--radius-md); overflow: hidden; background: var(--color-bg-elevated);">
+          <img src="${img}" alt="${al.title}" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        <div style="padding: var(--space-sm) 0; min-height: 50px; display: flex; flex-direction: column; justify-content: center;">
+          <div style="font-size: 0.9rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${al.title}</div>
+          <div style="font-size: 0.8rem; color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${al.artists?.[0]?.name || "Unknown"}</div>
+        </div>
+      `;
+      card.onclick = () => {
+        const normalized = normalizeSimilarAlbum(al);
+        openAlbum({
+          ...normalized,
+          type: "ALBUM",
+          artists: normalized.artists || [{ name: "Unknown Artist" }],
+        });
+      };
+      container.appendChild(card);
+    }
+
+    row.appendChild(container);
+    el.appendChild(row);
+  } catch (error) {
+    console.log("Could not load similar albums:", error);
+  }
 }

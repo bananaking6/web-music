@@ -89,6 +89,16 @@ export async function fetchLyrics(trackId: string): Promise<string | null> {
   }
 }
 
+/** Fetch similar albums by album id */
+export async function fetchSimilarAlbums(id: string): Promise<any | null> {
+  try {
+    const data = await fetchWithRetry(`${API}/album/similar/?id=${id}`);
+    return data?.albums ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Build a cover image URL from a cover id */
 export function coverUrl(cover: string | undefined, size = "320x320"): string {
   if (!cover) return "";
