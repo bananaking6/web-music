@@ -18,16 +18,14 @@ jobs:
         with:
           ref: main
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
 
       - name: Install dependencies
-        run: npm install
+        run: bun install
 
       - name: Build with Vite
-        run: npm run build
+        run: bun run build
 
       - name: Push dist to production branch
         run: |
@@ -36,6 +34,7 @@ jobs:
           git checkout --orphan production
           git rm -rf .
           cp -r dist/* .
+          rm -rf node_modules
           git add .
           git commit -m "Production build from main" || exit 0
           git push origin production --force
