@@ -67,8 +67,10 @@ export function initPlayer() {
   seekBar.addEventListener("mousemove", (e) => {
     const rect = seekBar.getBoundingClientRect();
     const pct = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-    timeTooltip.style.left = pct * 100 + "%";
     if (audio.duration) timeTooltip.textContent = formatTime(pct * audio.duration);
+    timeTooltip.style.left = e.clientX + "px";
+    timeTooltip.style.top = rect.top - 40 + "px";
+    timeTooltip.classList.add("visible");
   });
 
   seekBar.addEventListener("mousedown", (e) => {
@@ -81,15 +83,8 @@ export function initPlayer() {
   window.addEventListener("mouseup", () => (isDragging = false));
 
   // Seek bar — tooltip visibility
-  seekBar.addEventListener("mousemove", (e) => {
-    const rect = seekBar.getBoundingClientRect();
-    const pct = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-    timeTooltip.textContent = formatTime(audio.duration * pct);
-    timeTooltip.style.left = pct * 100 + "%";
-    timeTooltip.style.opacity = "1";
-  });
   seekBar.addEventListener("mouseleave", () => {
-    timeTooltip.style.opacity = "0";
+    timeTooltip.classList.remove("visible");
   });
 
   // Seek bar — touch

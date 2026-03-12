@@ -60,27 +60,23 @@ import("./components/ArtistPage").then(({ openArtist }) => {
 
 // ─── Bootstrap ─────────────────────────────────────────────────────────────
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   initNavigation();
   initSearch();
   initPlayer();
   initLyrics();
-  initPlaylists();
+
+  // Initialize default playlists first so they exist when loading UI
+  const { initializeDefaultPlaylists } = await import("./lib/localStorage");
+  await initializeDefaultPlaylists();
+
+  // Load playlists into UI after defaults are created
+  await initPlaylists();
 
   // Restore session if available
   loadSessionStorage();
-
-  // Ensure favorites playlist exists
-  if (!localStorage.getItem("playlist-favorites")) {
-    createPlaylist("favorites", "Favorites");
-    localStorage.setItem("playlist-favorites", "true");
-  }
 });
 
 // ─── Audio ended → advance queue ───────────────────────────────────────────
 const audio = document.getElementById("audio") as HTMLAudioElement;
 audio.onended = next;
-
-// ─── Future: Local music support ────────────────────────────────────────────
-// Local file import can be added in src/components/LocalMusic.ts
-// and mounted here when ready.

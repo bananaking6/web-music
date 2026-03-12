@@ -11,9 +11,33 @@ import { showToast } from "../utils/helpers";
 import { queue, index } from "../lib/audioPlayer";
 import { fetchAlbum } from "../lib/api";
 
+const timeTooltip = document.getElementById("timeTooltip")!;
+let tooltipHideTimeout: ReturnType<typeof setTimeout>;
+
+/** Update tooltip position to follow cursor */
+function updateTooltipPosition(e: MouseEvent) {
+  timeTooltip.style.left = e.clientX + 10 + "px";
+  timeTooltip.style.top = e.clientY - 30 + "px";
+}
+
+/** Show a tooltip with card information on hover */
+function showCardTooltip(element: HTMLElement, text: string, e: MouseEvent) {
+  clearTimeout(tooltipHideTimeout);
+  timeTooltip.textContent = text;
+  updateTooltipPosition(e);
+  timeTooltip.classList.add("visible");
+}
+
+/** Hide the tooltip */
+function hideCardTooltip() {
+  tooltipHideTimeout = setTimeout(() => {
+    timeTooltip.classList.remove("visible");
+  }, 100);
+}
+
 /** Open a playlist in the album view */
-export function openPlaylist(id: string) {
-  const pl = getPlaylist(id);
+export async function openPlaylist(id: string) {
+  const pl = await getPlaylist(id);
   if (!pl) {
     console.warn("Playlist not found:", id);
     return;
@@ -22,7 +46,7 @@ export function openPlaylist(id: string) {
     openAlbum({
       title: pl.title,
       type: "PLAYLIST",
-      cover: pl.cover || "5806b59b-2f3d-4d0a-8541-e75de4e58f2c",
+      cover: "5806b59b-2f3d-4d0a-8541-e75de4e58f2c",
       releaseDate: `${new Date().getFullYear()}-${new Date().getMonth() + 1}-${new Date().getDate() - 1}`,
       artists: [{ name: "You" }],
       playlistTracks: pl.tracks || [],
@@ -34,12 +58,13 @@ export function openPlaylist(id: string) {
 }
 
 /** Render sidebar playlists and pinned items */
-export function loadPlaylists() {
+export async function loadPlaylists() {
   const playlistsBar = document.getElementById("playlists")!;
   playlistsBar.innerHTML = "";
 
-  for (const id of getPlaylistIds()) {
-    const pl = getPlaylist(id);
+  const playlistIds = await getPlaylistIds();
+  for (const id of playlistIds) {
+    const pl = await getPlaylist(id);
     if (!pl) continue;
 
     const plDiv = document.createElement("div");
@@ -71,28 +96,37 @@ export function loadPlaylists() {
     }
 
     plDiv.onclick = () => openPlaylist(id);
+    plDiv.addEventListener("mouseenter", (e) => 
+      showCardTooltip(plDiv, `${pl.title} (${pl.numberOfTracks} ${pl.numberOfTracks === 1 ? "track" : "tracks"})`, e as MouseEvent)
+    );
+    plDiv.addEventListener("mousemove", updateTooltipPosition);
+    plDiv.addEventListener("mouseleave", hideCardTooltip);
     playlistsBar.appendChild(plDiv);
   }
 
   // Pinned items
   const pinnedBar = document.getElementById("pinned")!;
   pinnedBar.innerHTML = "";
-  getPinned().forEach((pinnedItem: any) => {
+  const pinnedItems = await getPinned();
+  pinnedItems.forEach((pinnedItem: any) => {
     const pDiv = document.createElement("div");
     pDiv.className = "card";
 
-    if (pinnedItem[0] === "album") {
-      const al = pinnedItem[1];
-      pDiv.title = al.title;
+    if (pinnedItem.type === "album") {
+      const al = pinnedItem.data;
       const img = document.createElement("img");
       img.src = coverUrl(al.cover);
       img.style.cssText = "width: 100%; height: 100%; object-fit: cover;";
       pDiv.appendChild(img);
       pDiv.onclick = () =>
         import("../components/AlbumPage").then(({ openAlbum }) => openAlbum(al));
-    } else if (pinnedItem[0] === "artist") {
-      const ar = pinnedItem[1];
-      pDiv.title = ar[1];
+      pDiv.addEventListener("mouseenter", (e) => 
+        showCardTooltip(pDiv, al.title, e as MouseEvent)
+      );
+      pDiv.addEventListener("mousemove", updateTooltipPosition);
+      pDiv.addEventListener("mouseleave", hideCardTooltip);
+    } else if (pinnedItem.type === "artist") {
+      const ar = pinnedItem.data;
       const img = document.createElement("img");
       img.src = coverUrl(ar[2]);
       img.style.cssText = "width: 100%; height: 100%; object-fit: cover;";
@@ -101,6 +135,11 @@ export function loadPlaylists() {
         import("../components/ArtistPage").then(({ openArtist }) =>
           openArtist(ar[0], ar[1], ar[2]),
         );
+      pDiv.addEventListener("mouseenter", (e) => 
+        showCardTooltip(pDiv, ar[1], e as MouseEvent)
+      );
+      pDiv.addEventListener("mousemove", updateTooltipPosition);
+      pDiv.addEventListener("mouseleave", hideCardTooltip);
     }
 
     pinnedBar.appendChild(pDiv);
@@ -108,7 +147,7 @@ export function loadPlaylists() {
 }
 
 /** Build the playlist checkbox list inside the modal */
-export function buildPlaylistListForModal(options: {
+export async function buildPlaylistListForModal(options: {
   tracks: any[];
   headerText?: string;
 }) {
@@ -121,8 +160,9 @@ export function buildPlaylistListForModal(options: {
 
   list.innerHTML = "";
 
-  for (const id of getPlaylistIds()) {
-    let pl = getPlaylist(id);
+  const playlistIds = await getPlaylistIds();
+  for (const id of playlistIds) {
+    let pl = await getPlaylist(id);
     if (!pl) continue;
 
     const div = document.createElement("div");
@@ -133,7 +173,7 @@ export function buildPlaylistListForModal(options: {
     checkbox.id = `chk-${id}`;
 
     const tracksInPlaylist = tracks.filter((t) =>
-      pl.tracks.some((p: any) => p.id === t.id),
+      pl!.tracks.some((p: any) => p.id === t.id),
     ).length;
 
     if (tracks.length === 1) {
@@ -145,16 +185,18 @@ export function buildPlaylistListForModal(options: {
         tracksInPlaylist > 0 && tracksInPlaylist < tracks.length;
     }
 
-    checkbox.onchange = (e) => {
+    checkbox.onchange = async (e) => {
       const checked = (e.target as HTMLInputElement).checked;
       if (tracks.length === 1) {
-        toggleTrackInPlaylist(id, tracks[0], checked);
+        await toggleTrackInPlaylist(id, tracks[0], checked);
       } else {
-        tracks.forEach((t) => toggleTrackInPlaylist(id, t, checked));
+        for (const t of tracks) {
+          await toggleTrackInPlaylist(id, t, checked);
+        }
       }
-      pl = getPlaylist(id)!;
+      pl = await getPlaylist(id);
       const updatedCount = tracks.filter((t) =>
-        pl.tracks.some((p: any) => p.id === t.id),
+        pl!.tracks.some((p: any) => p.id === t.id),
       ).length;
       checkbox.checked = updatedCount === tracks.length && tracks.length > 0;
       checkbox.indeterminate = updatedCount > 0 && updatedCount < tracks.length;
@@ -162,7 +204,7 @@ export function buildPlaylistListForModal(options: {
 
     const label = document.createElement("label");
     label.htmlFor = `chk-${id}`;
-    label.textContent = pl.title;
+    label.textContent = pl.title || "";
 
     div.appendChild(checkbox);
     div.appendChild(label);
@@ -178,7 +220,7 @@ export function buildPlaylistListForModal(options: {
 }
 
 /** Open the add-to-playlist modal for a single track */
-export function openAddToPlaylistModal(track?: any) {
+export async function openAddToPlaylistModal(track?: any) {
   if (!track) {
     if (queue.length > 0) {
       track = queue[index];
@@ -189,7 +231,7 @@ export function openAddToPlaylistModal(track?: any) {
   }
   const modal = document.getElementById("playlistModal")!;
   modal.classList.remove("hidden");
-  buildPlaylistListForModal({
+  await buildPlaylistListForModal({
     tracks: [track],
     headerText: `Add "${track.title || track.name || "Track"}" to Playlist`,
   });
@@ -198,14 +240,14 @@ export function openAddToPlaylistModal(track?: any) {
 }
 
 /** Open the add-to-playlist modal for a full album */
-export function openAddAlbumToPlaylistModal(tracks: any[], albumTitle: string) {
+export async function openAddAlbumToPlaylistModal(tracks: any[], albumTitle: string) {
   if (!tracks?.length) {
     showToast("No tracks to add");
     return;
   }
   const modal = document.getElementById("playlistModal")!;
   modal.classList.remove("hidden");
-  buildPlaylistListForModal({
+  await buildPlaylistListForModal({
     tracks,
     headerText: `Add "${albumTitle}" to Playlist`,
   });
@@ -223,7 +265,7 @@ export async function openAddArtistToPlaylistModal(albums: any[], artist: any) {
     );
     const tracks = trackArrays.flat();
     modal.classList.remove("hidden");
-    buildPlaylistListForModal({
+    await buildPlaylistListForModal({
       tracks,
       headerText: `Add "${artist.name}" to Playlist`,
     });
@@ -235,13 +277,13 @@ export async function openAddArtistToPlaylistModal(albums: any[], artist: any) {
 }
 
 /** Close the playlist modal */
-export function closePlaylistModal() {
+export async function closePlaylistModal() {
   document.getElementById("playlistModal")!.classList.add("hidden");
-  loadPlaylists();
+  await loadPlaylists();
 }
 
 /** Show a right-click context menu for a track */
-export function showTrackContextMenu(x: number, y: number, track: any) {
+export async function showTrackContextMenu(x: number, y: number, track: any) {
   let menu = document.getElementById("trackContextMenu");
   if (!menu) {
     menu = document.createElement("div");
@@ -280,20 +322,23 @@ export function showTrackContextMenu(x: number, y: number, track: any) {
   menu.appendChild(divider);
 
   let foundAny = false;
-  for (const id of getPlaylistIds()) {
-    const pl = getPlaylist(id);
+  const playlistIds = await getPlaylistIds();
+  for (const id of playlistIds) {
+    const pl = await getPlaylist(id);
     if (!pl) continue;
     menu.appendChild(
-      makeItem(`Quick add to ${pl.title}`, () => toggleTrackInPlaylist(id, track, true)),
+      makeItem(`Quick add to ${pl.title}`, async () => {
+        await toggleTrackInPlaylist(id, track, true);
+      }),
     );
     foundAny = true;
   }
 
   if (!foundAny) {
     menu.appendChild(
-      makeItem("No playlists yet — create one", () => {
-        createPlaylist();
-        loadPlaylists();
+      makeItem("No playlists yet — create one", async () => {
+        await createPlaylist();
+        await loadPlaylists();
       }),
     );
   }
@@ -313,24 +358,17 @@ export function setupTrackContextMenu(el: HTMLElement, track: any) {
 }
 
 /** Create a new playlist from within the modal */
-export function createNewPlaylistFromModal() {
-  createPlaylist();
-  closePlaylistModal();
+export async function createNewPlaylistFromModal() {
+  await createPlaylist();
+  await closePlaylistModal();
 }
 
 /** Initialize playlist sidebar and modal close button */
-export function initPlaylists() {
-  document.addEventListener("DOMContentLoaded", () => {
-    // Ensure favorites playlist exists
-    if (!localStorage.getItem("playlist-favorites")) {
-      createPlaylist("favorites", "Favorites");
-      localStorage.setItem("playlist-favorites", "true");
-    }
-    loadPlaylists();
-  });
+export async function initPlaylists() {
+  await loadPlaylists();
 
   // Modal backdrop close
-  document.getElementById("playlistModal")!.addEventListener("click", (e) => {
-    if (e.target === document.getElementById("playlistModal")) closePlaylistModal();
+  document.getElementById("playlistModal")!.addEventListener("click", async (e) => {
+    if (e.target === document.getElementById("playlistModal")) await closePlaylistModal();
   });
 }

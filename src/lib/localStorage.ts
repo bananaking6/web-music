@@ -1,99 +1,240 @@
 import { showToast } from "../utils/helpers";
+import {
+  getAllItems,
+  getItemById,
+  saveItem,
+  deleteItem,
+  initDB,
+  STORES,
+  PlaylistItem,
+  PinnedItem,
+  SavedAlbum,
+  SavedArtist,
+} from "./db";
 
-/** Get all playlist ids from localStorage */
-export function getPlaylistIds(): string[] {
-  const ids: string[] = [];
-  for (const key in localStorage) {
-    if (Object.prototype.hasOwnProperty.call(localStorage, key) && key.startsWith("playlist_")) {
-      ids.push(key.replace("playlist_", ""));
+// Initialize database on module load
+initDB().catch(console.error);
+
+// Default playlists to create on first load (using fixed UUIDs)
+const DEFAULT_PLAYLISTS = [
+  { id: "00000000-0000-0000-0000-000000000001" as `${string}-${string}-${string}-${string}-${string}`, title: "Liked Songs" }
+];
+
+/** Initialize default playlists if they don't exist */
+export async function initializeDefaultPlaylists(): Promise<void> {
+  try {
+    for (const defaultPl of DEFAULT_PLAYLISTS) {
+      const existing = await getPlaylist(defaultPl.id);
+      if (!existing) {
+        await createPlaylist(defaultPl.id, defaultPl.title);
+      }
     }
+  } catch (error) {
+    console.error("Failed to initialize default playlists:", error);
   }
-  return ids;
+}
+
+// ─── PLAYLISTS ───────────────────────────────────────────────────────────
+
+/** Get all playlist ids */
+export async function getPlaylistIds(): Promise<string[]> {
+  const playlists = await getAllItems<PlaylistItem>(STORES.PLAYLISTS);
+  return playlists.map((p) => p.id);
 }
 
 /** Load a playlist by id */
-export function getPlaylist(id: string): any | null {
-  try {
-    return JSON.parse(localStorage.getItem(`playlist_${id}`) || "null");
-  } catch {
-    return null;
-  }
+export async function getPlaylist(id: string): Promise<PlaylistItem | null> {
+  const playlist = await getItemById<PlaylistItem>(STORES.PLAYLISTS, id);
+  return playlist || null;
 }
 
-/** Save a playlist to localStorage */
-export function savePlaylist(id: string, pl: any): void {
-  localStorage.setItem(`playlist_${id}`, JSON.stringify(pl));
+/** Save a playlist */
+export async function savePlaylist(id: string, pl: any): Promise<void> {
+  await saveItem<PlaylistItem>(STORES.PLAYLISTS, {
+    id,
+    title: pl.title,
+    tracks: pl.tracks || [],
+    duration: pl.duration || 0,
+    numberOfTracks: pl.numberOfTracks || 0,
+  });
 }
 
 /** Create a new playlist */
-export function createPlaylist(
+export async function createPlaylist(
   id = crypto.randomUUID(),
   title = "Untitled Playlist",
-): string {
+): Promise<string> {
   const pl = { title, tracks: [], duration: 0, numberOfTracks: 0, id };
-  savePlaylist(id, pl);
+  await savePlaylist(id, pl);
   return id;
 }
 
 /** Delete a playlist by id */
-export function deletePlaylist(id: string): void {
-  localStorage.removeItem(`playlist_${id}`);
+export async function deletePlaylist(id: string): Promise<void> {
+  await deleteItem(STORES.PLAYLISTS, id);
 }
 
-/** Toggle a track in a playlist (add if absent, remove if present) */
-export function toggleTrackInPlaylist(
+/** Toggle a track in a playlist */
+export async function toggleTrackInPlaylist(
   plId: string,
   track: any,
   add: boolean,
-): void {
-  const key = `playlist_${plId}`;
-  const plRaw = localStorage.getItem(key);
-  if (!plRaw) return;
-  let pl = JSON.parse(plRaw);
-  if (!pl.tracks) pl.tracks = [];
+): Promise<void> {
+  const pl = await getPlaylist(plId);
+  if (!pl) return;
 
   if (add) {
     if (!pl.tracks.some((t: any) => t.id === track.id)) {
       pl.tracks.push(track);
+      pl.numberOfTracks = pl.tracks.length;
       showToast(`Added to "${pl.title}"`);
     }
   } else {
     const before = pl.tracks.length;
     pl.tracks = pl.tracks.filter((t: any) => t.id !== track.id);
+    pl.numberOfTracks = pl.tracks.length;
     if (pl.tracks.length !== before) showToast(`Removed from "${pl.title}"`);
   }
 
-  localStorage.setItem(key, JSON.stringify(pl));
+  await savePlaylist(plId, pl);
 }
+
+// ─── PINNED ──────────────────────────────────────────────────────────────
 
 /** Get all pinned items */
-export function getPinned(): any[] {
-  return JSON.parse(localStorage.getItem("pinned") || "[]");
-}
-
-/** Save pinned items */
-export function savePinned(pinned: any[]): void {
-  localStorage.setItem("pinned", JSON.stringify(pinned));
+export async function getPinned(): Promise<PinnedItem[]> {
+  return getAllItems<PinnedItem>(STORES.PINNED);
 }
 
 /** Toggle a pinned album */
-export function togglePinnedAlbum(al: any): void {
-  const pinned = getPinned();
-  const idx = pinned.findIndex(
-    ([type, data]: any) => type === "album" && data.id === al.id,
-  );
-  if (idx !== -1) pinned.splice(idx, 1);
-  else pinned.push(["album", al]);
-  savePinned(pinned);
+export async function togglePinnedAlbum(al: any): Promise<void> {
+  const pinnedId = `pinned-album-${al.id}`;
+  const existing = await getItemById<PinnedItem>(STORES.PINNED, pinnedId);
+
+  if (existing) {
+    await deleteItem(STORES.PINNED, pinnedId);
+  } else {
+    await saveItem<PinnedItem>(STORES.PINNED, {
+      id: pinnedId,
+      type: "album",
+      title: al.title,
+      data: al,
+    });
+  }
 }
 
 /** Toggle a pinned artist */
-export function togglePinnedArtist(id: string, name: string, pic: string): void {
-  const pinned = getPinned();
-  const idx = pinned.findIndex(
-    ([type, data]: any) => type === "artist" && data[0] === id,
-  );
-  if (idx !== -1) pinned.splice(idx, 1);
-  else pinned.push(["artist", [id, name, pic]]);
-  savePinned(pinned);
+export async function togglePinnedArtist(
+  id: string,
+  name: string,
+  pic: string,
+): Promise<void> {
+  const pinnedId = `pinned-artist-${id}`;
+  const existing = await getItemById<PinnedItem>(STORES.PINNED, pinnedId);
+
+  if (existing) {
+    await deleteItem(STORES.PINNED, pinnedId);
+  } else {
+    await saveItem<PinnedItem>(STORES.PINNED, {
+      id: pinnedId,
+      type: "artist",
+      title: name,
+      data: [id, name, pic],
+    });
+  }
+}
+
+// ─── SAVED ALBUMS (LIBRARY) ──────────────────────────────────────────────
+
+/** Get all saved albums */
+export async function getSavedAlbums(): Promise<SavedAlbum[]> {
+  return getAllItems<SavedAlbum>(STORES.SAVED_ALBUMS);
+}
+
+/** Get a saved album by id */
+export async function getSavedAlbum(id: string): Promise<SavedAlbum | null> {
+  const album = await getItemById<SavedAlbum>(STORES.SAVED_ALBUMS, id);
+  return album || null;
+}
+
+/** Check if an album is saved */
+export async function isAlbumSaved(id: string): Promise<boolean> {
+  const album = await getSavedAlbum(id);
+  return !!album;
+}
+
+/** Save an album to library */
+export async function saveAlbum(album: any): Promise<void> {
+  await saveItem<SavedAlbum>(STORES.SAVED_ALBUMS, {
+    id: album.id,
+    title: album.title,
+    artists: album.artists || [],
+    cover: album.cover,
+    releaseDate: album.releaseDate,
+    numberOfTracks: album.numberOfTracks || 0,
+    data: album,
+  });
+  showToast(`Saved "${album.title}"`);
+}
+
+/** Remove an album from library */
+export async function deleteAlbum(id: string): Promise<void> {
+  await deleteItem(STORES.SAVED_ALBUMS, id);
+}
+
+/** Toggle album save status */
+export async function toggleSaveAlbum(album: any): Promise<void> {
+  const isSaved = await isAlbumSaved(album.id);
+  if (isSaved) {
+    await deleteAlbum(album.id);
+    showToast(`Removed "${album.title}"`);
+  } else {
+    await saveAlbum(album);
+  }
+}
+
+// ─── SAVED ARTISTS (LIBRARY) ─────────────────────────────────────────────
+
+/** Get all saved artists */
+export async function getSavedArtists(): Promise<SavedArtist[]> {
+  return getAllItems<SavedArtist>(STORES.SAVED_ARTISTS);
+}
+
+/** Get a saved artist by id */
+export async function getSavedArtist(id: string): Promise<SavedArtist | null> {
+  const artist = await getItemById<SavedArtist>(STORES.SAVED_ARTISTS, id);
+  return artist || null;
+}
+
+/** Check if an artist is saved */
+export async function isArtistSaved(id: string): Promise<boolean> {
+  const artist = await getSavedArtist(id);
+  return !!artist;
+}
+
+/** Save an artist to library */
+export async function saveArtist(id: string, name: string, picture: string, data?: any): Promise<void> {
+  await saveItem<SavedArtist>(STORES.SAVED_ARTISTS, {
+    id,
+    name,
+    picture,
+    data,
+  });
+  showToast(`Saved "${name}"`);
+}
+
+/** Remove an artist from library */
+export async function deleteArtist(id: string): Promise<void> {
+  await deleteItem(STORES.SAVED_ARTISTS, id);
+}
+
+/** Toggle artist save status */
+export async function toggleSaveArtist(id: string, name: string, picture: string): Promise<void> {
+  const isSaved = await isArtistSaved(id);
+  if (isSaved) {
+    await deleteArtist(id);
+    showToast(`Removed "${name}"`);
+  } else {
+    await saveArtist(id, name, picture);
+  }
 }
