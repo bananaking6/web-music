@@ -24,6 +24,7 @@ import {
   reverseAudio,
   downloadTrack,
   queue,
+  renderFullscreenPlayer,
 } from "./lib/audioPlayer";
 import { loadSessionStorage } from "./lib/sessionStorage";
 import { createPlaylist } from "./lib/localStorage";
@@ -46,6 +47,7 @@ window.closePlaylistModal = closePlaylistModal;
 window.createNewPlaylistFromModal = createNewPlaylistFromModal;
 window.createPlaylist = createPlaylist;
 window.openPlaylist = openPlaylist;
+window.renderFullscreenPlayer = renderFullscreenPlayer;
 
 // queue is mutated in-place so window.queue always reflects the current state
 window.queue = queue;

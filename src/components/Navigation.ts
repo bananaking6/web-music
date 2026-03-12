@@ -34,7 +34,7 @@ export function showView(id: string, pushHistory = true, state?: any) {
 
 /** Update nav button highlights */
 function updateNavHighlight() {
-  document.querySelectorAll("#topNav button").forEach((btn) => {
+  document.querySelectorAll(".nav-icon").forEach((btn) => {
     btn.classList.remove("active");
   });
 
@@ -42,10 +42,8 @@ function updateNavHighlight() {
   if (navBtn) navBtn.classList.add("active");
 }
 
-/** Initialize top nav and history support */
+/** Initialize navigation and history support */
 export function initNavigation() {
-  const topNav = document.getElementById("topNav")!;
-
   // Initialize nav highlight
   updateNavHighlight();
 

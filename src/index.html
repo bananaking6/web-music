@@ -20,28 +20,6 @@
         <div id="bg"></div>
         <div class="time-tooltip" id="timeTooltip">0:00</div>
         <div id="app">
-            <nav id="topNav" class="top-nav">
-                <div onclick="showView('home')" class="nav-brand">𝚺 Music</div>
-                <div class="nav-links">
-                    <button id="navHome" onclick="showView('home')" title="Home">
-                        Home
-                    </button>
-                    <button
-                        id="navSearch"
-                        onclick="showView('search')"
-                        title="Search"
-                    >
-                        Search
-                    </button>
-                    <button
-                        id="navLibrary"
-                        onclick="showView('library')"
-                        title="Library"
-                    >
-                        Library
-                    </button>
-                </div>
-            </nav>
             <main>
                 <section id="library" class="view hidden">
                     <div class="library-container">
@@ -90,184 +68,39 @@
                 </section>
                 <section id="artist" class="view hidden"></section>
                 <section id="album" class="view hidden"></section>
+                <section id="player" class="view hidden">
+                    <div id="playerView" class="player-fullscreen"></div>
+                </section>
             </main>
-            <footer class="player-footer">
-                <div class="player-seek-container">
-                    <div class="seek-bar" id="seekBar">
-                        <div class="buffer-bar" id="bufferBar"></div>
-                        <div class="progress-bar" id="progressBar"></div>
-                    </div>
-                </div>
-
+            <nav id="bottomNav" class="bottom-nav">
+                <button id="navHome" onclick="showView('home')" class="nav-icon" title="Home">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    <span>Home</span>
+                </button>
+                <button id="navSearch" onclick="showView('search')" class="nav-icon" title="Search">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+                    <span>Search</span>
+                </button>
+                <button id="navLibrary" onclick="showView('library')" class="nav-icon" title="Library">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"></path><line x1="9" y1="9" x2="9" y2="15"></line><line x1="13" y1="9" x2="13" y2="15"></line><line x1="17" y1="9" x2="17" y2="15"></line></svg>
+                    <span>Library</span>
+                </button>
+            </nav>
+            <footer class="player-footer" onclick="showView('player')">
                 <div class="player-info">
                     <img id="playerCover" alt=" " />
-                    <div id="playerTitle">
-                        <span id="playerTitleSpan"></span
-                        ><img id="playerExplicit" src="/e.svg" />
+                    <div class="player-text">
+                        <div id="playerTitle">
+                            <span id="playerTitleSpan">Not playing</span>
+                        </div>
+                        <div id="playerArtist">No artist</div>
                     </div>
-                    <div id="playerArtist"></div>
                 </div>
-
-                <div class="player-controls">
-                    <span
-                        id="currentTime"
-                        style="
-                            font-size: 12px;
-                            margin-right: 15px;
-                            color: #b3b3b3;
-                            font-variant-numeric: tabular-nums;
-                        "
-                        >0:00</span
-                    >
-                    <button onclick="prev()" title="Previous">
-                        <svg
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <polygon points="19 20 9 12 19 4 19 20"></polygon>
-                            <line x1="5" y1="19" x2="5" y2="5"></line>
-                        </svg>
-                    </button>
-                    <button onclick="togglePlay()" title="Play/Pause">
-                        <svg
-                            width="40"
-                            height="40"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                        >
-                            <path d="M8 5v14l11-7z" />
-                        </svg>
-                    </button>
-                    <button onclick="next()" title="Next">
-                        <svg
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <polygon points="5 4 15 12 5 20 5 4"></polygon>
-                            <line x1="19" y1="5" x2="19" y2="19"></line>
-                        </svg>
-                    </button>
-                    <span
-                        id="totalTime"
-                        style="
-                            font-size: 12px;
-                            margin-left: 15px;
-                            color: #b3b3b3;
-                            font-variant-numeric: tabular-nums;
-                        "
-                        >0:00</span
-                    >
-                </div>
-
-                <div style="display: flex; align-items: center; gap: 15px">
-                    <button
-                        onclick="reverseAudio()"
-                        title="Reverse"
-                        id="reverseBtn"
-                    >
-                        <svg
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <path d="M21 7v6h-6"></path>
-                            <path
-                                d="M3 17a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 7"
-                            ></path>
-                        </svg>
-                    </button>
-                    <button onclick="toggleLyrics()" title="Lyrics">
-                        <svg
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <path
-                                d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"
-                            ></path>
-                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                            <line x1="12" y1="19" x2="12" y2="23"></line>
-                            <line x1="8" y1="23" x2="16" y2="23"></line>
-                        </svg>
-                    </button>
-                    <button onclick="toggleQueue()" title="Queue">
-                        <svg
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <line x1="8" y1="6" x2="21" y2="6"></line>
-                            <line x1="8" y1="12" x2="21" y2="12"></line>
-                            <line x1="8" y1="18" x2="21" y2="18"></line>
-                            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                            <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                        </svg>
-                    </button>
-                    <button
-                        onclick="openAddToPlaylistModal()"
-                        title="Add to Playlist"
-                    >
-                        <svg
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                    </button>
-                    <button onclick="downloadTrack()" title="Download">
-                        <svg
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <path
-                                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-                            ></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                    </button>
-                </div>
+                <button class="player-play-btn" onclick="event.stopPropagation(); togglePlay()">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z" />
+                    </svg>
+                </button>
             </footer>
         </div>
         <div id="lyricsView" class="hidden"></div>
