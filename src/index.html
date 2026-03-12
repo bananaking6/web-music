@@ -20,56 +20,42 @@
         <div id="bg"></div>
         <div class="time-tooltip" id="timeTooltip">0:00</div>
         <div id="app">
-            <aside class="sidebar" id="sidebar">
-                <section id="side-main">
-                    <h1>𝚺 Music</h1>
-                    <button onclick="showView('home')">Home</button>
-                    <button onclick="showView('search')">Search</button>
-                    <button
-                        onclick="
-                            openAlbum({
-                                title: 'Queue',
-                                type: 'PLAYLIST',
-                                cover: '',
-                                releaseDate: `${new Date().getFullYear()}-${new Date().getMonth() + 1}-${new Date().getDate() - 1}`,
-                                artists: [{ name: 'Various Artists' }],
-                                playlistTracks: window.queue,
-                                duration: window.queue.reduce(
-                                    (sum, track) => sum + track.duration,
-                                    0,
-                                ),
-                                numberOfTracks: window.queue.length,
-                                id: 'queue',
-                            })
-                        "
-                    >
-                        Queue
+            <nav id="topNav" class="top-nav">
+                <div onclick="showView('home')" class="nav-brand">𝚺 Music</div>
+                <div class="nav-links">
+                    <button id="navHome" onclick="showView('home')" title="Home">
+                        Home
                     </button>
-                    <br />
-                </section>
-                <section id="side-playlists">
-                    <h1>Playlists</h1>
-                    <section id="playlists"></section>
-                    <button onclick="createPlaylist()">+ New Playlist</button>
-                </section>
-                <section id="side-pinned">
-                    <h1>Pinned</h1>
-                    <section id="pinned"></section>
-                </section>
-            </aside>
-            <nav id="mobileNav" class="mobile-nav hidden">
-                <button id="navHome" onclick="showView('home')" title="Home">
-                    Home
-                </button>
-                <button
-                    id="navSearch"
-                    onclick="showView('search')"
-                    title="Search"
-                >
-                    Search
-                </button>
+                    <button
+                        id="navSearch"
+                        onclick="showView('search')"
+                        title="Search"
+                    >
+                        Search
+                    </button>
+                    <button
+                        id="navLibrary"
+                        onclick="showView('library')"
+                        title="Library"
+                    >
+                        Library
+                    </button>
+                </div>
             </nav>
             <main>
+                <section id="library" class="view hidden">
+                    <div class="library-container">
+                        <section id="side-playlists" class="library-section">
+                            <h1>Playlists</h1>
+                            <section id="playlists"></section>
+                            <button onclick="createPlaylist()" class="library-btn">+ New Playlist</button>
+                        </section>
+                        <section id="side-pinned" class="library-section">
+                            <h1>Pinned</h1>
+                            <section id="pinned"></section>
+                        </section>
+                    </div>
+                </section>
                 <section id="home" class="view">
                     <div class="home-hero">
                         <h2 class="home-title">Welcome to 𝚺 Music</h2>

@@ -1,40 +1,95 @@
-/** Show a view by id, hiding all others */
-export function showView(id: string) {
-  document.querySelectorAll(".view").forEach((v) => v.classList.add("hidden"));
-  document.getElementById(id)!.classList.remove("hidden");
-  window.dispatchEvent(new Event("showViewEvent"));
+let currentView = "home";
+let currentState: any = { view: "home" };
+
+/** Show a view by id with smooth fade transition */
+export function showView(id: string, pushHistory = true, state?: any) {
+  // Fade out current view
+  const currentViewEl = document.querySelector(".view:not(.hidden)");
+  if (currentViewEl && currentViewEl.id === id && !state) return; // Already showing
+
+  currentViewEl?.classList.add("fade-out");
+
+  // Switch view after fade
+  setTimeout(() => {
+    document.querySelectorAll(".view").forEach((v) => {
+      v.classList.add("hidden");
+      v.classList.remove("fade-out");
+    });
+    const newView = document.getElementById(id)!;
+    newView.classList.remove("hidden");
+    newView.classList.add("fade-in");
+
+    currentView = id;
+    currentState = { view: id, ...state };
+    updateNavHighlight();
+    window.dispatchEvent(new Event("showViewEvent"));
+
+    // Push to browser history (use replaceState for initial/same view)
+    if (pushHistory) {
+      const url = state?.id ? `#${id}/${state.id}` : `#${id}`;
+      window.history.pushState(currentState, "", url);
+    }
+  }, 200);
 }
 
-/** Initialize mobile nav visibility and highlight logic */
-export function initNavigation() {
-  const mobileNav = document.getElementById("mobileNav")!;
-  const navButtons = mobileNav?.querySelectorAll("button");
-
-  function updateNavVisibility() {
-    if (window.innerWidth <= 768) {
-      mobileNav?.classList.remove("hidden");
-    } else {
-      mobileNav?.classList.add("hidden");
-    }
-  }
-
-  function updateNavHighlight() {
-    const activeView = document.querySelector(".view:not(.hidden)");
-    if (!activeView) return;
-    navButtons?.forEach((btn) => btn.classList.remove("active"));
-    if (activeView.id === "home")
-      document.getElementById("navHome")?.classList.add("active");
-    if (activeView.id === "search")
-      document.getElementById("navSearch")?.classList.add("active");
-  }
-
-  navButtons?.forEach((btn) => {
-    btn.addEventListener("click", () => setTimeout(updateNavHighlight, 50));
+/** Update nav button highlights */
+function updateNavHighlight() {
+  document.querySelectorAll("#topNav button").forEach((btn) => {
+    btn.classList.remove("active");
   });
 
-  window.addEventListener("showViewEvent", updateNavHighlight);
-  window.addEventListener("resize", updateNavVisibility);
+  const navBtn = document.getElementById(`nav${currentView.charAt(0).toUpperCase() + currentView.slice(1)}`);
+  if (navBtn) navBtn.classList.add("active");
+}
 
-  updateNavVisibility();
+/** Initialize top nav and history support */
+export function initNavigation() {
+  const topNav = document.getElementById("topNav")!;
+
+  // Initialize nav highlight
   updateNavHighlight();
+
+  // Handle browser back/forward
+  window.addEventListener("popstate", (e) => {
+    const state = e.state || { view: "home" };
+    const targetView = state.view || "home";
+    currentState = state;
+    
+    if (state.id) {
+      // Restore page with ID (album, artist, playlist)
+      if (targetView === "album") {
+        import("../components/AlbumPage").then(({ openAlbumById }) =>
+          openAlbumById(state.id, false),
+        );
+      } else if (targetView === "artist") {
+        import("../components/ArtistPage").then(({ openArtistById }) =>
+          openArtistById(state.id, false),
+        );
+      }
+    } else {
+      showView(targetView, false);
+    }
+  });
+
+  // Parse initial hash if present
+  const hash = window.location.hash.slice(1);
+  if (hash) {
+    const [view, id] = hash.split("/");
+    if (["home", "search", "library", "album", "artist"].includes(view)) {
+      if (id) {
+        currentState = { view, id };
+        if (view === "album") {
+          import("../components/AlbumPage").then(({ openAlbumById }) =>
+            openAlbumById(id, false),
+          );
+        } else if (view === "artist") {
+          import("../components/ArtistPage").then(({ openArtistById }) =>
+            openArtistById(id, false),
+          );
+        }
+      } else {
+        showView(view, false);
+      }
+    }
+  }
 }

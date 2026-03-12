@@ -31,12 +31,36 @@ function deduplicateAlbums(albums: any[]): any[] {
 
 /** Open the artist page */
 export async function openArtist(id: string, name: string, pic: string) {
-  showView("artist");
+  const { showView: sv } = await import("../components/Navigation");
+  sv("artist", true, { id });
+  await renderArtistContent(id, name, pic);
+}
+
+/** Open artist by ID (used for history/deep-linking) */
+export async function openArtistById(id: string, pushHistory = true) {
+  const { showView: sv } = await import("../components/Navigation");
+  sv("artist", pushHistory, { id });
+  
+  // Try to fetch artist info from cache or API
+  const artist = await fetchArtist(id);
+  if (artist) {
+    await renderArtistContent(id, artist.name, artist.picture);
+  } else {
+    // Fallback with minimal info
+    await renderArtistContent(id, "Artist", "");
+  }
+}
+
+/** Render artist page content */
+async function renderArtistContent(id: string, name: string, pic: string) {
   const el = document.getElementById("artist")!;
   el.innerHTML = `
     <div id="artistBanner">
       <img src="${IMG + pic.replaceAll("-", "/")}/750x750.jpg" alt="artist">
-      <h2>${name}</h2>
+      <div>
+        <h2>${name}</h2>
+        <span style="font-size: 0.9rem; color: var(--color-text-muted); display: block; margin-top: var(--space-xs);">ID: ${id}</span>
+      </div>
     </div>
     <div id="artistContent"></div>
   `;

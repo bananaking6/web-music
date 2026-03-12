@@ -8,7 +8,7 @@ import {
   loadPlaylists,
 } from "../components/Playlists";
 import { showView } from "../components/Navigation";
-import { togglePinnedAlbum, deletePlaylist } from "../lib/localStorage";
+import { togglePinnedAlbum, deletePlaylist, getPlaylist } from "../lib/localStorage";
 import { showToast } from "../utils/helpers";
 
 /** Render a single track row for the album/playlist track list */
@@ -30,7 +30,35 @@ export function renderTrackRow(track: any): HTMLElement {
 
 /** Open the album view, fetching track data if needed */
 export async function openAlbum(al: any) {
-  showView("album");
+  // Push history with album ID
+  const { showView: sv } = await import("../components/Navigation");
+  sv("album", true, { id: al.id });
+  await renderAlbumContent(al);
+}
+
+/** Open album by ID (used for history/deep-linking) */
+export async function openAlbumById(id: string, pushHistory = true) {
+  const { showView: sv } = await import("../components/Navigation");
+  sv("album", pushHistory, { id });
+  
+  const pl = await getPlaylist(id);
+  if (pl) {
+    const al = { ...pl, type: "PLAYLIST" } as any;
+    await renderAlbumContent(al);
+  } else {
+    // Try fetching as regular album
+    const data = await fetchAlbum(id);
+    if (data) {
+      data.id = id;
+      data.type = "ALBUM";
+      data.artists = data.artists || [{ name: "Unknown Artist" }];
+      await renderAlbumContent(data);
+    }
+  }
+}
+
+/** Render album/playlist content */
+async function renderAlbumContent(al: any) {
   const el = document.getElementById("album")!;
   const isPlaylist = al.type === "PLAYLIST";
   const dateStr = formatDate(al.releaseDate);
@@ -41,6 +69,7 @@ export async function openAlbum(al: any) {
       <h2 id="albumTitle" style="cursor: ${isPlaylist ? "pointer" : "default"}">${al.title}</h2>
       <h3 id="albumArtist">${al.artists[0].name}${dateStr ? " • " + dateStr : ""}</h3>
       <span id="albumInfo">${al.numberOfTracks} ${al.numberOfTracks === 1 ? "song" : "songs"} • ${formatTime(al.duration)}${al.copyright ? " • " + al.copyright : ""}</span>
+      <span style="display: block; font-size: 0.85rem; color: var(--color-text-muted); margin-top: var(--space-sm);">ID: ${al.id}</span>
     </div>
     <div style="margin-top: 20px; display: flex; gap: 10px;">
       <button class="album-action" id="playAll">PLAY</button>
@@ -101,7 +130,7 @@ export async function openAlbum(al: any) {
         deletePlaylist(al.id);
         showToast(`Deleted "${al.title}"`);
         loadPlaylists();
-        showView("search");
+        import("../components/Navigation").then(({ showView: sv }) => sv("search"));
       }
     };
 
