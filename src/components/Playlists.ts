@@ -36,14 +36,19 @@ function hideCardTooltip() {
 }
 
 /** Open a playlist in the album view */
-export async function openPlaylist(id: string) {
-  const pl = await getPlaylist(id);
+export async function openPlaylist(id: string, pushHistory = true) {
+  const normalizedId = id === "favorites"
+    ? "00000000-0000-0000-0000-000000000001"
+    : id;
+  const pl = await getPlaylist(normalizedId);
   if (!pl) {
     console.warn("Playlist not found:", id);
     return;
   }
-  import("../components/AlbumPage").then(({ openAlbum }) =>
-    openAlbum({
+  import("../components/Navigation").then(({ showView }) => {
+    showView("album", pushHistory, { id: normalizedId, route: "playlist" });
+    import("../components/AlbumPage").then(({ openAlbum }) =>
+      openAlbum({
       title: pl.title,
       type: "PLAYLIST",
       cover: "5806b59b-2f3d-4d0a-8541-e75de4e58f2c",
@@ -52,9 +57,11 @@ export async function openPlaylist(id: string) {
       playlistTracks: pl.tracks || [],
       duration: pl.duration,
       numberOfTracks: pl.numberOfTracks,
-      id: pl.id,
+      id: normalizedId,
+      skipRoutePush: true,
     }),
-  );
+    );
+  });
 }
 
 /** Load and display pinned artists */

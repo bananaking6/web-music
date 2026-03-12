@@ -8,7 +8,12 @@ import {
   loadPlaylists,
 } from "../components/Playlists";
 import { showView, addToViewHistory } from "../components/Navigation";
-import { togglePinnedAlbum, deletePlaylist, getPlaylist } from "../lib/localStorage";
+import {
+  togglePinnedAlbum,
+  deletePlaylist,
+  getPlaylist,
+  savePlaylist,
+} from "../lib/localStorage";
 import { showToast } from "../utils/helpers";
 
 /** Show loading placeholder */
@@ -48,23 +53,28 @@ export function renderTrackRow(track: any, options?: { number?: number; isPlayli
 /** Open the album view, fetching track data if needed */
 export async function openAlbum(al: any) {
   // Push history with album ID
-  const { showView: sv } = await import("../components/Navigation");
-  sv("album", true, { id: al.id });
+  const isPlaylist = al.type === "PLAYLIST";
+  if (!al.skipRoutePush) {
+    const { showView: sv } = await import("../components/Navigation");
+    sv("album", true, { id: al.id, route: isPlaylist ? "playlist" : "album" });
+  }
   await renderAlbumContent(al);
 }
 
 /** Open album by ID (used for history/deep-linking) */
 export async function openAlbumById(id: string, pushHistory = true) {
-  const { showView: sv } = await import("../components/Navigation");
-  sv("album", pushHistory, { id });
   showLoadingPlaceholder();
   
   try {
     const pl = await getPlaylist(id);
     if (pl) {
+      const { showView: sv } = await import("../components/Navigation");
+      sv("album", pushHistory, { id, route: "playlist" });
       const al = { ...pl, type: "PLAYLIST" } as any;
       await renderAlbumContent(al);
     } else {
+      const { showView: sv } = await import("../components/Navigation");
+      sv("album", pushHistory, { id, route: "album" });
       // Try fetching as regular album
       const data = await fetchAlbum(id);
       if (data) {
@@ -106,8 +116,10 @@ async function renderAlbumContent(al: any) {
     <div id="albumTracks"></div>
   `;
   
-  // Add to view history with cover icon
-  addToViewHistory(al.id, al.title, "album", coverUrl(al.cover));
+  // Add to view history with cover icon (skip playlists)
+  if (!isPlaylist) {
+    addToViewHistory(al.id, al.title, "album", coverUrl(al.cover));
+  }
 
   // Artist link (if artist info available)
   if (al.artists[0].id && al.artists[0].name && al.artists[0].picture) {
@@ -133,31 +145,34 @@ async function renderAlbumContent(al: any) {
     titleEl.addEventListener("click", () => {
       titleEl.contentEditable = "true";
       titleEl.focus();
-      const save = () => {
+      const save = async () => {
         titleEl.contentEditable = "false";
         const newTitle = titleEl.textContent?.trim();
-        if (newTitle) {
-          const key = `playlist_${al.id}`;
-          const pl = JSON.parse(localStorage.getItem(key) || "null");
-          if (pl) {
-            pl.title = newTitle;
-            localStorage.setItem(key, JSON.stringify(pl));
-            showToast(`Playlist renamed to "${newTitle}"`);
-            loadPlaylists();
-          }
+        if (!newTitle) return;
+
+        const current = await getPlaylist(al.id);
+        if (current) {
+          await savePlaylist(al.id, { ...current, title: newTitle });
+          showToast(`Playlist renamed to "${newTitle}"`);
+          await loadPlaylists();
         }
       };
-      titleEl.addEventListener("blur", save, { once: true });
+      titleEl.addEventListener("blur", () => {
+        void save();
+      }, { once: true });
       titleEl.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") { e.preventDefault(); save(); }
+        if (e.key === "Enter") {
+          e.preventDefault();
+          void save();
+        }
       }, { once: true });
     });
 
-    extraBtn.onclick = () => {
+    extraBtn.onclick = async () => {
       if (confirm(`Delete "${al.title}"?`)) {
-        deletePlaylist(al.id);
+        await deletePlaylist(al.id);
         showToast(`Deleted "${al.title}"`);
-        loadPlaylists();
+        await loadPlaylists();
         import("../components/Navigation").then(({ showView: sv }) => sv("search"));
       }
     };

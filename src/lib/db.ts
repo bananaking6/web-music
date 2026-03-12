@@ -1,6 +1,6 @@
 // IndexedDB setup for music library management
 const DB_NAME = "MusicApp";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORES = {
   PLAYLISTS: "playlists",
   PINNED: "pinned",

@@ -3,8 +3,8 @@ let currentState: any = { view: "home" };
 
 /** Add item to view history (stored in localStorage) */
 export async function addToViewHistory(id: string, title: string, view: string, icon?: string) {
-  // Don't track main views (home, search, library)
-  if (["home", "search", "library"].includes(view)) return;
+  // Don't track main views or playlists
+  if (["home", "search", "library", "playlist"].includes(view)) return;
   
   // Store in localStorage
   const { addToHistory } = await import("../lib/localStorage");
@@ -50,13 +50,15 @@ export function showView(id: string, pushHistory = true, state?: any) {
     newView.classList.add("fade-in");
 
     currentView = id;
-    currentState = { view: id, ...state };
+    const routeView = state?.route || id;
+    currentState = { ...state, view: routeView, panel: id };
     updateNavHighlight();
     window.dispatchEvent(new Event("showViewEvent"));
 
     // Push to browser history (use replaceState for initial/same view)
     if (pushHistory) {
-      const url = state?.id ? `#${id}/${state.id}` : `#${id}`;
+      const routeId = state?.route || id;
+      const url = state?.id ? `#${routeId}/${state.id}` : `#${routeId}`;
       window.history.pushState(currentState, "", url);
     }
   }, 200);
@@ -91,6 +93,10 @@ export function initNavigation() {
         import("../components/AlbumPage").then(({ openAlbumById }) =>
           openAlbumById(state.id, false),
         );
+      } else if (targetView === "playlist") {
+        import("../components/Playlists").then(({ openPlaylist }) =>
+          openPlaylist(state.id, false),
+        );
       } else if (targetView === "artist") {
         import("../components/ArtistPage").then(({ openArtistById }) =>
           openArtistById(state.id, false),
@@ -105,13 +111,20 @@ export function initNavigation() {
   const hash = window.location.hash.slice(1);
   if (hash) {
     const [view, id] = hash.split("/");
-    if (["home", "search", "library", "album", "artist"].includes(view)) {
+    if (["home", "search", "library", "album", "playlist", "artist"].includes(view)) {
       if (id) {
         currentState = { view, id };
         if (view === "album") {
           import("../components/AlbumPage").then(({ openAlbumById }) => {
             openAlbumById(id, false).catch(err => {
               console.error("Failed to load album:", err);
+              showView("home", false);
+            });
+          });
+        } else if (view === "playlist") {
+          import("../components/Playlists").then(({ openPlaylist }) => {
+            openPlaylist(id, false).catch(err => {
+              console.error("Failed to load playlist:", err);
               showView("home", false);
             });
           });
