@@ -6,7 +6,8 @@ export function formatTime(sec: number): string {
 }
 
 /** Lighten or darken a hex color by a percentage offset */
-export function adjustColor(hex: string, percent: number): string {
+export function adjustColor(hex: string | null | undefined, percent: number): string {
+  if (!hex) return "#888888"; // Default gray color if no hex provided
   let num = parseInt(hex.slice(1), 16);
   let r = (num >> 16) & 0xff;
   let g = (num >> 8) & 0xff;

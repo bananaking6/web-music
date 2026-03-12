@@ -37,16 +37,13 @@ function hideCardTooltip() {
 
 /** Open a playlist in the album view */
 export async function openPlaylist(id: string, pushHistory = true) {
-  const normalizedId = id === "favorites"
-    ? "00000000-0000-0000-0000-000000000001"
-    : id;
-  const pl = await getPlaylist(normalizedId);
+  const pl = await getPlaylist(id);
   if (!pl) {
     console.warn("Playlist not found:", id);
     return;
   }
   import("../components/Navigation").then(({ showView }) => {
-    showView("album", pushHistory, { id: normalizedId, route: "playlist" });
+    showView("album", pushHistory, { id: id, route: "playlist" });
     import("../components/AlbumPage").then(({ openAlbum }) =>
       openAlbum({
       title: pl.title,
@@ -57,7 +54,7 @@ export async function openPlaylist(id: string, pushHistory = true) {
       playlistTracks: pl.tracks || [],
       duration: pl.duration,
       numberOfTracks: pl.numberOfTracks,
-      id: normalizedId,
+      id: id,
       skipRoutePush: true,
     }),
     );
@@ -481,9 +478,9 @@ export function loadLibraryQueue() {
 
   queue.forEach((t, i) => {
     const row = document.createElement("div");
-    row.style.cssText = "display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-sm); cursor: pointer;" + (i === index ? " background: var(--color-bg-elevated);" : "");
+    row.style.cssText = "display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-sm); cursor: pointer;";
     row.onmouseenter = () => row.style.background = "var(--color-bg-elevated)";
-    row.onmouseleave = () => { if (i !== index) row.style.background = ""; };
+    row.onmouseleave = () => { row.style.background = ""; };
 
     const img = document.createElement("img");
     img.src = coverUrl(t.album?.cover);
@@ -493,8 +490,8 @@ export function loadLibraryQueue() {
     const info = document.createElement("div");
     info.style.cssText = "flex: 1; min-width: 0; overflow: hidden;";
     const title = document.createElement("div");
-    title.textContent = (i === index ? "▶ " : "") + (t.title || "Unknown");
-    title.style.cssText = "font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" + (i === index ? " color: var(--color-accent);" : "");
+    title.textContent = t.title || "Unknown";
+    title.style.cssText = "font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;";
     info.appendChild(title);
 
     const artist = document.createElement("div");

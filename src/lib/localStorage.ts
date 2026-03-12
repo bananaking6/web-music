@@ -56,6 +56,8 @@ export async function savePlaylist(id: string, pl: any): Promise<void> {
     tracks: pl.tracks || [],
     duration: pl.duration || 0,
     numberOfTracks: pl.numberOfTracks || 0,
+    createdAt: pl.createdAt,
+    updatedAt: pl.updatedAt,
   });
 }
 
@@ -64,7 +66,8 @@ export async function createPlaylist(
   id = crypto.randomUUID(),
   title = "Untitled Playlist",
 ): Promise<string> {
-  const pl = { title, tracks: [], duration: 0, numberOfTracks: 0, id };
+  const now = Date.now();
+  const pl = { title, tracks: [], duration: 0, numberOfTracks: 0, id, createdAt: now, updatedAt: now };
   await savePlaylist(id, pl);
   return id;
 }
@@ -83,20 +86,31 @@ export async function toggleTrackInPlaylist(
   const pl = await getPlaylist(plId);
   if (!pl) return;
 
+  let changed = false;
+
   if (add) {
     if (!pl.tracks.some((t: any) => t.id === track.id)) {
       pl.tracks.push(track);
       pl.numberOfTracks = pl.tracks.length;
       showToast(`Added to "${pl.title}"`);
+      changed = true;
     }
   } else {
     const before = pl.tracks.length;
     pl.tracks = pl.tracks.filter((t: any) => t.id !== track.id);
     pl.numberOfTracks = pl.tracks.length;
-    if (pl.tracks.length !== before) showToast(`Removed from "${pl.title}"`);
+    if (pl.tracks.length !== before) {
+      showToast(`Removed from "${pl.title}"`);
+      changed = true;
+    }
   }
 
-  await savePlaylist(plId, pl);
+  if (changed) {
+    // Recalculate duration and update timestamps
+    pl.duration = pl.tracks.reduce((sum: number, t: any) => sum + (t.duration || 0), 0);
+    pl.updatedAt = Date.now();
+    await savePlaylist(plId, pl);
+  }
 }
 
 // ─── PINNED ──────────────────────────────────────────────────────────────

@@ -10,7 +10,9 @@ export let queue: any[] = [];
 export let index = 0;
 export let preloadedAudio: Record<number, any> = {};
 
-export function setQueue(newQueue: any[]) { queue.splice(0, queue.length, ...newQueue); }
+export function setQueue(newQueue: any[]) { 
+  queue.splice(0, queue.length, ...newQueue);
+}
 export function setIndex(i: number) { index = i; }
 export function setPreloadedAudio(val: Record<number, any>) { preloadedAudio = val; }
 
@@ -39,15 +41,16 @@ export function updatePlayerUI(track: any, trackIndex: number) {
   document.getElementById("playerTitleSpan")!.textContent =
     track.title || "Unknown Title";
   document.getElementById("playerArtist")!.textContent =
-    `${track.artists?.[0]?.name || "Unknown Artist"} - ${track.album.title || ""}`;
+    `${track.artists?.[0]?.name || "Unknown Artist"}${track.album ? " - " + (track.album.title || "") : ""}`;
   document.title = `${track.title || "Unknown Title"} - ${track.artists?.[0]?.name || "Unknown Artist"}`;
   (document.getElementById("playerExplicit") as HTMLImageElement).style.display =
     track.explicit ? "inline" : "none";
 
-  document.documentElement.style.setProperty("--main-color", track.album.vibrantColor);
+  const vibrantColor = track.album?.vibrantColor || "#888888";
+  document.documentElement.style.setProperty("--main-color", vibrantColor);
   document.documentElement.style.setProperty(
     "--secondary-color",
-    adjustColor(track.album.vibrantColor, -50),
+    adjustColor(vibrantColor, -50),
   );
 
   const queueView = document.getElementById("queueView")!;
