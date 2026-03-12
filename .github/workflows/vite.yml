@@ -1,4 +1,4 @@
-name: Vite Build Dev
+name: Vite Build Production
 
 on:
   push:
@@ -29,22 +29,13 @@ jobs:
       - name: Build with Vite
         run: npm run build
 
-      - name: Create and push build branch
-        uses: lablnet/create-branch-from-tag@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: build
-          owner: ${{ github.repository_owner }}
-          repo: ${{ github.event.repository.name }}
-
-      - name: Push dist to build branch
+      - name: Push dist to production branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout build
+          git checkout --orphan production
           git rm -rf .
           cp -r dist/* .
           git add .
-          git commit -m "Build from dev push" || exit 0
-          git push origin build --force
+          git commit -m "Production build from main" || exit 0
+          git push origin production --force
