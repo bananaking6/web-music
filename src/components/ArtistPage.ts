@@ -16,7 +16,7 @@ function deduplicateAlbums(albums: any[]): any[] {
   const unique = new Map<string, any>();
   for (const album of albums) {
     if (!album?.title) continue;
-    const key = JSON.stringify([album.title, album.numberOfTracks || 0]);
+    const key = JSON.stringify([album.title, album.numberOfTracks || 0, album.explicit || false]);
     if (unique.has(key)) {
       const existing = unique.get(key)!;
       const existingExplicit = existing.explicit || false;
@@ -177,11 +177,21 @@ async function renderArtistContent(id: string, name: string, pic: string) {
     container.className = "cards";
     items.forEach((al) => {
       const img = al.cover ? coverUrl(al.cover) : "";
-      container.appendChild(
-        createCard(img, al.title, () => {
-          import("../components/AlbumPage").then(({ openAlbum }) => openAlbum(al));
-        }),
-      );
+      const card = createCard(img, al.title, () => {
+        import("../components/AlbumPage").then(({ openAlbum }) => openAlbum(al));
+      });
+      if (al.explicit) {
+        const explicitImg = document.createElement("img");
+        explicitImg.src = "e.svg";
+        explicitImg.style.position = "absolute";
+        explicitImg.style.bottom = "4px";
+        explicitImg.style.right = "4px";
+        explicitImg.style.width = "16px";
+        explicitImg.style.height = "16px";
+        card.style.position = "relative";
+        card.appendChild(explicitImg);
+      }
+      container.appendChild(card);
     });
     row.appendChild(container);
     content.appendChild(row);
