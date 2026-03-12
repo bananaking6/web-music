@@ -3,7 +3,7 @@ name: Vite Build Production
 on:
   push:
     branches:
-      - main
+      - dev
 
 permissions:
   contents: write
@@ -13,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout main branch
+      - name: Checkout dev branch
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: dev
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
@@ -31,10 +31,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout --orphan production
+          git checkout --orphan main
           git rm -rf .
           cp -r dist/* .
           rm -rf node_modules
           git add .
           git commit -m "Production build from main" || exit 0
-          git push origin production --force
+          git push origin main --force
