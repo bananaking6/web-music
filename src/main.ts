@@ -84,6 +84,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Restore session if available
   loadSessionStorage();
+
+  // Set up volume slider
+  const volumeSlider = document.getElementById("volumeSlider") as HTMLInputElement;
+  const audio = document.getElementById("audio") as HTMLAudioElement;
+  
+  // Set initial volume from localStorage or default to 100
+  const savedVolume = localStorage.getItem("playerVolume");
+  const initialVolume = savedVolume ? parseInt(savedVolume) : 100;
+  volumeSlider.value = String(initialVolume);
+  audio.volume = initialVolume / 100;
+  
+  // Update volume on slider change
+  volumeSlider.addEventListener("input", (e) => {
+    const volume = parseInt((e.target as HTMLInputElement).value);
+    audio.volume = volume / 100;
+    localStorage.setItem("playerVolume", String(volume));
+  });
 });
 
 // ─── Audio ended → advance queue ───────────────────────────────────────────
