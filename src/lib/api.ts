@@ -39,6 +39,7 @@ export async function searchQuery(
   param: string,
   q: string,
 ): Promise<any | null> {
+  if (PROXY) q = q.replaceAll(" ", "%20")
   try {
     const data = await fetchWithRetry(
       `${API}/search/?${param}=${encodeURIComponent(q)}`
